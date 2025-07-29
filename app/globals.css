@@ -1,0 +1,136 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Performance optimizations */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  font-feature-settings: 'rlig' 1, 'calt' 1;
+}
+
+/* Custom components with performance optimizations */
+.memory-card {
+  @apply relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm shadow-soft border border-white/20;
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+.memory-card:hover {
+  @apply shadow-glow;
+  transform: translateY(-4px) translateZ(0);
+}
+
+.memory-overlay {
+  @apply absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent opacity-0;
+  transition: opacity 0.3s ease-in-out;
+  will-change: opacity;
+}
+
+.memory-card:hover .memory-overlay {
+  @apply opacity-100;
+}
+
+/* Optimized animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.fade-in {
+  animation: fadeIn 0.3s ease-out;
+}
+
+/* Loading states */
+.loading-skeleton {
+  @apply animate-pulse bg-neutral-200 rounded-xl;
+}
+
+/* Image optimizations */
+img {
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
+}
+
+/* Scrollbar styling */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-neutral-100 rounded-full;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded-full;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400;
+}
+
+/* Focus states for accessibility */
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  @apply outline-none ring-2 ring-primary-500 ring-offset-2;
+}
+
+/* Reduced motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Dark mode support (optional) */
+@media (prefers-color-scheme: dark) {
+  .dark {
+    @apply bg-neutral-900 text-white;
+  }
+  
+  .dark .memory-card {
+    @apply bg-neutral-800/80 border-neutral-700/20;
+  }
+  
+  .dark .memory-overlay {
+    @apply from-black/80;
+  }
+}
+
+/* Custom gradients */
+.gradient-text {
+  @apply bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent;
+}
+
+.gradient-border {
+  @apply border border-transparent bg-gradient-to-r from-primary-500 to-accent-500 bg-clip-border;
+}
+
+/* Glass morphism effects */
+.glass {
+  @apply bg-white/80 backdrop-blur-sm border border-white/20;
+}
+
+.glass-dark {
+  @apply bg-black/80 backdrop-blur-sm border border-white/10;
+} 
