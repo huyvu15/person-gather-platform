@@ -60,12 +60,12 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
 
   const gridClasses = viewMode === 'list' 
     ? 'grid-cols-1 gap-4' 
-    : 'grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4'
+    : 'grid-cols-1 gap-4 sm:gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5'
 
   return (
     <>
       <motion.div 
-        className={`grid ${gridClasses}`}
+        className={`grid ${gridClasses} pb-8`}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ duration: 0.3 }}

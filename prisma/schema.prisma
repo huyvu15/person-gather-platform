@@ -10,6 +10,23 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  role      String   @default("user") // user, admin
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  // Relations
+  notes     Note[]
+  posts     Post[]
+  events    Event[]
+}
+
 model Note {
   id          String   @id @default(cuid())
   title       String
@@ -21,7 +38,8 @@ model Note {
   color       String?  @default("blue")
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  userId      String?  // For future user authentication
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Post {
@@ -37,5 +55,27 @@ model Post {
   viewCount   Int      @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  userId      String?  // For future user authentication
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Event {
+  id          String   @id @default(cuid())
+  title       String
+  description String?
+  startDate   DateTime
+  endDate     DateTime
+  allDay      Boolean  @default(false)
+  color       String?  @default("blue")
+  category    String?  @default("general")
+  location    String?
+  attendees   String[] @default([])
+  isRecurring Boolean  @default(false)
+  recurrence  String?  // daily, weekly, monthly, yearly
+  isCompleted Boolean  @default(false)
+  priority    String?  @default("medium") // low, medium, high
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  userId      String
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 } 

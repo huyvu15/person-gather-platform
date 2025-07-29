@@ -24,6 +24,10 @@ cd mygather
 npm install
 npm install @prisma/client prisma pg
 npx prisma generate
+npm install bcryptjs @types/bcryptjs
+px prisma db push --force-reset
+npm list bcryptjs
+npm install recharts
 ```
 
 

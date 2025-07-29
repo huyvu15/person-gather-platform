@@ -1,14 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import Sidebar from '@/components/Sidebar'
-import ErrorBoundary from '@/components/ErrorBoundary'
+import { AuthProvider } from '@/contexts/AuthContext'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MyGather - Trang cá nhân của bạn',
-  description: 'Ứng dụng quản lý ảnh kỷ niệm, ghi chú và nhiều hơn nữa',
+  title: 'MyGather - Personal Dashboard',
+  description: 'A beautiful personal dashboard for managing notes, posts, memories, and calendar events.',
 }
 
 export default function RootLayout({
@@ -17,11 +16,11 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="vi">
+    <html lang="en">
       <body className={inter.className}>
-        <ErrorBoundary>
+        <AuthProvider>
           {children}
-        </ErrorBoundary>
+        </AuthProvider>
       </body>
     </html>
   )

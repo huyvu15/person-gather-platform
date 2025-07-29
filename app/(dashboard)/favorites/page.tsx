@@ -113,7 +113,7 @@ export default async function FavoritesPage() {
       </div>
 
       {/* Favorites Grid */}
-      <div>
+      <div className="pb-8">
         <Suspense fallback={<LoadingSpinner />}>
           {favoriteImages.length > 0 ? (
             <MemoryGrid images={favoriteImages} />

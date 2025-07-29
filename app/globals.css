@@ -17,6 +17,29 @@ body {
   font-feature-settings: 'rlig' 1, 'calt' 1;
 }
 
+/* Dashboard layout scrolling */
+.dashboard-main {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: 100vh;
+}
+
+.dashboard-main::-webkit-scrollbar {
+  width: 6px;
+}
+
+.dashboard-main::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.dashboard-main::-webkit-scrollbar-thumb {
+  @apply bg-neutral-300 rounded-full;
+}
+
+.dashboard-main::-webkit-scrollbar-thumb:hover {
+  @apply bg-neutral-400;
+}
+
 /* Custom components with performance optimizations */
 .memory-card {
   @apply relative overflow-hidden rounded-2xl bg-white/80 backdrop-blur-sm shadow-soft border border-white/20;

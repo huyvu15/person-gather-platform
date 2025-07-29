@@ -7,11 +7,16 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const search = searchParams.get('search')
-    const isArchived = searchParams.get('archived') === 'true'
+    const userId = searchParams.get('userId')
 
-    const where: any = {
-      isArchived: isArchived
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      )
     }
+
+    let where: any = { userId }
 
     if (category && category !== 'all') {
       where.category = category
@@ -27,10 +32,7 @@ export async function GET(request: NextRequest) {
 
     const notes = await prisma.note.findMany({
       where,
-      orderBy: [
-        { isPinned: 'desc' },
-        { updatedAt: 'desc' }
-      ]
+      orderBy: { createdAt: 'desc' }
     })
 
     return NextResponse.json(notes)
@@ -47,22 +49,23 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, content, category, tags, color } = body
+    const { title, content, category, tags, color, userId } = body
 
-    if (!title || !content) {
+    if (!title || !content || !userId) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: 'Title, content and userId are required' },
         { status: 400 }
       )
     }
 
     const note = await prisma.note.create({
       data: {
-        title,
-        content,
+        title: title.trim(),
+        content: content.trim(),
         category: category || 'general',
-        tags: tags || [],
-        color: color || 'blue'
+        tags: Array.isArray(tags) ? tags : [],
+        color: color || 'blue',
+        userId
       }
     })
 

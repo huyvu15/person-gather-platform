@@ -20,8 +20,10 @@ import {
   Star,
   Trash2,
   Grid3X3,
-  List
+  List,
+  User
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Post {
   id: string
@@ -43,6 +45,7 @@ const categories = [
 ]
 
 export default function PostsPage() {
+  const { user } = useAuth()
   const [posts, setPosts] = useState<Post[]>([])
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -58,7 +61,9 @@ export default function PostsPage() {
     excerpt: '',
     imageUrl: '',
     category: 'general',
-    tags: [] as string[]
+    tags: [] as string[],
+    isPublished: false,
+    isFeatured: false
   })
 
   // Load posts
@@ -101,11 +106,18 @@ export default function PostsPage() {
   const loadPosts = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/posts')
+      const params = new URLSearchParams()
+      if (selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (searchQuery) params.append('search', searchQuery)
+      if (showPublished) params.append('published', 'true')
+      params.append('userId', user?.id || '')
+
+      const response = await fetch(`/api/posts?${params}`)
       if (response.ok) {
         const data = await response.json()
-        console.log('Loaded posts:', data) // Debug log
         setPosts(data)
+      } else {
+        console.error('Failed to load posts:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading posts:', error)
@@ -116,10 +128,15 @@ export default function PostsPage() {
 
   const createPost = async () => {
     try {
+      const postData = {
+        ...newPost,
+        userId: user?.id
+      }
+
       const response = await fetch('/api/posts', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newPost)
+        body: JSON.stringify(postData)
       })
 
       if (response.ok) {
@@ -127,7 +144,16 @@ export default function PostsPage() {
         console.log('Created post:', createdPost) // Debug log
         setPosts(prev => [createdPost, ...prev])
         setIsCreateModalOpen(false)
-        setNewPost({ title: '', content: '', excerpt: '', imageUrl: '', category: 'general', tags: [] })
+        setNewPost({ 
+          title: '', 
+          content: '', 
+          excerpt: '', 
+          imageUrl: '', 
+          category: 'general', 
+          tags: [] as string[],
+          isPublished: false,
+          isFeatured: false
+        })
       }
     } catch (error) {
       console.error('Error creating post:', error)

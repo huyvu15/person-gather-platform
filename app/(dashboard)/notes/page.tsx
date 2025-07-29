@@ -16,6 +16,7 @@ import {
   BookOpen,
   Sparkles
 } from 'lucide-react'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Note {
   id: string
@@ -44,6 +45,7 @@ const categories = [
 ]
 
 export default function NotesPage() {
+  const { user } = useAuth()
   const [notes, setNotes] = useState<Note[]>([])
   const [filteredNotes, setFilteredNotes] = useState<Note[]>([])
   const [searchQuery, setSearchQuery] = useState('')
@@ -91,10 +93,17 @@ export default function NotesPage() {
   const loadNotes = async () => {
     try {
       setIsLoading(true)
-      const response = await fetch('/api/notes')
+      const params = new URLSearchParams()
+      if (selectedCategory !== 'all') params.append('category', selectedCategory)
+      if (searchQuery) params.append('search', searchQuery)
+      params.append('userId', user?.id || '')
+
+      const response = await fetch(`/api/notes?${params}`)
       if (response.ok) {
         const data = await response.json()
         setNotes(data)
+      } else {
+        console.error('Failed to load notes:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Error loading notes:', error)
@@ -105,10 +114,15 @@ export default function NotesPage() {
 
   const createNote = async () => {
     try {
+      const noteData = {
+        ...newNote,
+        userId: user?.id
+      }
+
       const response = await fetch('/api/notes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newNote)
+        body: JSON.stringify(noteData)
       })
 
       if (response.ok) {

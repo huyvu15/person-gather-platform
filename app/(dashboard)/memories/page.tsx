@@ -143,7 +143,7 @@ export default function MemoriesPage() {
 
   return (
     <motion.div 
-      className="min-h-screen bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50"
+      className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
@@ -347,7 +347,7 @@ export default function MemoriesPage() {
 
         {/* Main Content */}
         <motion.div 
-          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 p-8"
+          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 p-8 pb-12"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}

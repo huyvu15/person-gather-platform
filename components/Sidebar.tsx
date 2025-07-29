@@ -6,69 +6,65 @@ import { usePathname } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Home, 
-  Image, 
   StickyNote, 
+  FileText, 
+  Calendar, 
+  Heart, 
   Settings, 
+  LogOut,
+  User,
+  ChevronDown,
+  Sparkles,
   Upload,
   Folder,
-  Calendar,
   BookOpen,
   Star,
-  Sparkles,
-  Heart,
   Camera
 } from 'lucide-react'
-import Auth from './Auth'
+import { useAuth } from '@/contexts/AuthContext'
 
 const navigation = [
   { 
-    name: 'Trang chủ', 
-    href: '/', 
+    name: 'Dashboard', 
+    href: '/dashboard', 
     icon: Home,
     color: 'from-pink-400 to-purple-500',
-    description: 'Quay về trang chủ'
+    description: 'Trang chủ dashboard'
   },
   { 
-    name: 'Memories', 
-    href: '/memories', 
-    icon: Image,
+    name: 'Notes', 
+    href: '/notes', 
+    icon: StickyNote,
     color: 'from-blue-400 to-cyan-500',
-    description: 'Kho ảnh kỷ niệm'
+    description: 'Ghi chú nhanh'
   },
   { 
-    name: 'Bài viết', 
+    name: 'Posts', 
     href: '/posts', 
     icon: BookOpen,
     color: 'from-green-400 to-emerald-500',
     description: 'Viết và chia sẻ'
   },
   { 
-    name: 'Lịch', 
+    name: 'Calendar', 
     href: '/calendar', 
     icon: Calendar,
     color: 'from-orange-400 to-red-500',
     description: 'Lịch trình và sự kiện'
   },
   { 
-    name: 'Ghi chú', 
-    href: '/notes', 
-    icon: StickyNote,
-    color: 'from-yellow-400 to-orange-500',
-    description: 'Ghi chú nhanh'
+    name: 'Memories', 
+    href: '/memories', 
+    icon: Camera,
+    color: 'from-purple-400 to-pink-500',
+    description: 'Kho ảnh kỷ niệm'
   },
   { 
-    name: 'Yêu thích', 
+    name: 'Favorites', 
     href: '/favorites', 
     icon: Star,
-    color: 'from-purple-400 to-pink-500',
+    color: 'from-yellow-400 to-orange-500',
     description: 'Nội dung yêu thích'
-  },
-  { 
-    name: 'Cài đặt', 
-    href: '/settings', 
-    icon: Settings,
-    color: 'from-gray-400 to-slate-500',
-    description: 'Tùy chỉnh hệ thống'
   },
 ]
 
@@ -76,6 +72,12 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
+  const { user, logout } = useAuth()
+  const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
+
+  const handleLogout = () => {
+    logout()
+  }
 
   return (
     <motion.div 
@@ -242,22 +244,70 @@ export default function Sidebar() {
           </motion.div>
         )}
 
-        {/* Auth */}
+        {/* User Menu */}
         <motion.div 
           className="p-4 border-t border-white/20"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
         >
-          <Auth 
-            isLoggedIn={true}
-            user={{
-              name: 'Nguyễn Văn A',
-              email: 'nguyenvana@example.com',
-              avatar: '/api/placeholder/40/40'
-            }}
-            isCollapsed={isCollapsed}
-          />
+          <div className="relative">
+            <motion.button
+              onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
+              className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 hover:shadow-md transition-all duration-300"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 bg-gradient-to-r from-purple-500 to-pink-500 rounded-full flex items-center justify-center text-white font-semibold text-sm">
+                  {user?.name?.charAt(0)?.toUpperCase() || 'U'}
+                </div>
+                {!isCollapsed && (
+                  <div className="text-left">
+                    <p className="font-semibold text-gray-800 text-sm">{user?.name}</p>
+                    <p className="text-xs text-gray-500">{user?.email}</p>
+                  </div>
+                )}
+              </div>
+              {!isCollapsed && (
+                <motion.div
+                  animate={{ rotate: isUserMenuOpen ? 180 : 0 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <ChevronDown className="h-4 w-4 text-gray-500" />
+                </motion.div>
+              )}
+            </motion.button>
+
+            <AnimatePresence>
+              {isUserMenuOpen && !isCollapsed && (
+                <motion.div
+                  className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-50"
+                  initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                  transition={{ duration: 0.2 }}
+                >
+                  <div className="p-2">
+                    <Link
+                      href="/settings"
+                      className="flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-gray-50 transition-colors text-gray-700"
+                    >
+                      <Settings className="h-4 w-4" />
+                      <span className="text-sm font-medium">Settings</span>
+                    </Link>
+                    <button
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-3 px-4 py-3 rounded-xl hover:bg-red-50 transition-colors text-red-600"
+                    >
+                      <LogOut className="h-4 w-4" />
+                      <span className="text-sm font-medium">Logout</span>
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </motion.div>
       </div>
     </motion.div>

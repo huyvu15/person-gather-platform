@@ -7,14 +7,17 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url)
     const category = searchParams.get('category')
     const search = searchParams.get('search')
-    const isPublished = searchParams.get('published') === 'true'
+    const published = searchParams.get('published')
+    const userId = searchParams.get('userId')
 
-    const where: any = {}
-
-    // Chỉ lọc theo isPublished nếu có tham số published
-    if (searchParams.has('published')) {
-      where.isPublished = isPublished
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      )
     }
+
+    let where: any = { userId }
 
     if (category && category !== 'all') {
       where.category = category
@@ -29,23 +32,21 @@ export async function GET(request: NextRequest) {
       ]
     }
 
-    console.log('API query where:', where) // Debug log
+    // Only filter by isPublished if the parameter is explicitly provided
+    if (published !== null) {
+      where.isPublished = published === 'true'
+    }
 
     const posts = await prisma.post.findMany({
       where,
-      orderBy: [
-        { isFeatured: 'desc' },
-        { createdAt: 'desc' }
-      ]
+      orderBy: { createdAt: 'desc' }
     })
-
-    console.log('API returned posts:', posts.length) // Debug log
 
     return NextResponse.json(posts)
   } catch (error) {
     console.error('Error fetching posts:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch posts', details: error instanceof Error ? error.message : 'Unknown error' },
+      { error: 'Failed to fetch posts' },
       { status: 500 }
     )
   }
@@ -55,48 +56,48 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
-    const { title, content, excerpt, imageUrl, category, tags } = body
+    const { 
+      title, 
+      content, 
+      excerpt, 
+      imageUrl, 
+      category, 
+      tags, 
+      isPublished, 
+      isFeatured, 
+      userId 
+    } = body
 
     // Validation
-    if (!title || !content) {
+    if (!title || !content || !userId) {
       return NextResponse.json(
-        { error: 'Title and content are required' },
+        { error: 'Title, content and userId are required' },
         { status: 400 }
       )
     }
 
-    // Tạo excerpt tự động nếu không có
-    const autoExcerpt = excerpt || content.substring(0, 150) + (content.length > 150 ? '...' : '')
+    // Generate excerpt if not provided
+    const generatedExcerpt = excerpt || content.slice(0, 150) + (content.length > 150 ? '...' : '')
 
     const post = await prisma.post.create({
       data: {
         title: title.trim(),
         content: content.trim(),
-        excerpt: autoExcerpt,
+        excerpt: generatedExcerpt,
         imageUrl: imageUrl?.trim() || null,
         category: category || 'general',
         tags: Array.isArray(tags) ? tags : [],
-        isPublished: false,
-        isFeatured: false,
-        viewCount: 0
+        isPublished: isPublished || false,
+        isFeatured: isFeatured || false,
+        userId
       }
     })
 
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
     console.error('Error creating post:', error)
-    
-    // Log chi tiết lỗi để debug
-    if (error instanceof Error) {
-      console.error('Error message:', error.message)
-      console.error('Error stack:', error.stack)
-    }
-    
     return NextResponse.json(
-      { 
-        error: 'Failed to create post', 
-        details: error instanceof Error ? error.message : 'Unknown error' 
-      },
+      { error: 'Failed to create post' },
       { status: 500 }
     )
   }
