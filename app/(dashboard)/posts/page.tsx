@@ -18,7 +18,9 @@ import {
   Image as ImageIcon,
   Globe,
   Star,
-  Trash2
+  Trash2,
+  Grid3X3,
+  List
 } from 'lucide-react'
 
 interface Post {
@@ -45,7 +47,8 @@ export default function PostsPage() {
   const [filteredPosts, setFilteredPosts] = useState<Post[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [selectedCategory, setSelectedCategory] = useState('all')
-  const [showPublished, setShowPublished] = useState(true)
+  const [showPublished, setShowPublished] = useState(false) // Thay đổi từ true thành false
+  const [viewMode, setViewMode] = useState<'grid' | 'feed'>('grid') // Thêm view mode
   const [isLoading, setIsLoading] = useState(true)
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false)
   const [editingPost, setEditingPost] = useState<Post | null>(null)
@@ -80,9 +83,17 @@ export default function PostsPage() {
       filtered = filtered.filter(post => post.category === selectedCategory)
     }
 
+    // Chỉ lọc theo isPublished nếu showPublished = true
     if (showPublished) {
       filtered = filtered.filter(post => post.isPublished)
     }
+
+    console.log('Filtering posts:', { 
+      totalPosts: posts.length, 
+      filteredPosts: filtered.length, 
+      showPublished, 
+      selectedCategory 
+    }) // Debug log
 
     setFilteredPosts(filtered)
   }, [posts, searchQuery, selectedCategory, showPublished])
@@ -93,6 +104,7 @@ export default function PostsPage() {
       const response = await fetch('/api/posts')
       if (response.ok) {
         const data = await response.json()
+        console.log('Loaded posts:', data) // Debug log
         setPosts(data)
       }
     } catch (error) {
@@ -112,6 +124,7 @@ export default function PostsPage() {
 
       if (response.ok) {
         const createdPost = await response.json()
+        console.log('Created post:', createdPost) // Debug log
         setPosts(prev => [createdPost, ...prev])
         setIsCreateModalOpen(false)
         setNewPost({ title: '', content: '', excerpt: '', imageUrl: '', category: 'general', tags: [] })
@@ -266,15 +279,43 @@ export default function PostsPage() {
               <Globe className="h-5 w-5 mr-2 inline" />
               {showPublished ? 'Đã xuất bản' : 'Tất cả'}
             </motion.button>
+
+            {/* View Mode Toggle */}
+            <motion.button
+              onClick={() => setViewMode(viewMode === 'grid' ? 'feed' : 'grid')}
+              className={`px-4 py-3 rounded-2xl font-medium transition-all duration-300 ${
+                viewMode === 'grid'
+                  ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' 
+                  : 'bg-white/50 text-gray-700 hover:bg-white/70'
+              }`}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              {viewMode === 'grid' ? (
+                <>
+                  <Grid3X3 className="h-5 w-5 mr-2 inline" />
+                  Grid
+                </>
+              ) : (
+                <>
+                  <List className="h-5 w-5 mr-2 inline" />
+                  Feed
+                </>
+              )}
+            </motion.button>
           </div>
         </motion.div>
 
-        {/* Posts Grid */}
+        {/* Posts Container */}
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className={viewMode === 'grid' 
+            ? "grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+            : "max-w-2xl mx-auto space-y-6"
+          }
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4, duration: 0.5 }}
+          key={viewMode} // Thêm key để trigger re-render khi view mode thay đổi
         >
           {isLoading ? (
             <div className="col-span-full flex justify-center py-12">
@@ -286,141 +327,281 @@ export default function PostsPage() {
             </div>
           ) : filteredPosts.length > 0 ? (
             filteredPosts.map((post, index) => (
-              <motion.article
-                key={post.id}
-                className={`bg-white/80 backdrop-blur-xl rounded-2xl shadow-soft border border-white/20 overflow-hidden hover:shadow-lg transition-all duration-300 ${
-                  post.isFeatured ? 'ring-2 ring-yellow-500' : ''
-                }`}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index, duration: 0.5 }}
-                whileHover={{ scale: 1.02, y: -5 }}
-              >
-                {/* Image */}
-                <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
-                  {post.imageUrl ? (
-                    <img
-                      src={post.imageUrl}
-                      alt={post.title}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <ImageIcon className="h-12 w-12 text-gray-400" />
-                    </div>
-                  )}
-                  <div className="absolute top-3 right-3 flex items-center gap-2">
-                    {post.isFeatured && (
-                      <div className="p-1 bg-yellow-500 rounded-full">
-                        <Star className="h-4 w-4 text-white" />
+              viewMode === 'grid' ? (
+                // Grid View
+                <motion.article
+                  key={post.id}
+                  className={`bg-white/80 backdrop-blur-xl rounded-2xl shadow-soft border border-white/20 overflow-hidden hover:shadow-lg transition-all duration-300 ${
+                    post.isFeatured ? 'ring-2 ring-yellow-500' : ''
+                  }`}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.5 }}
+                  whileHover={{ scale: 1.02, y: -5 }}
+                >
+                  {/* Image */}
+                  <div className="aspect-video bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
+                    {post.imageUrl ? (
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-12 w-12 text-gray-400" />
                       </div>
                     )}
-                    <motion.button
-                      onClick={() => toggleFeatured(post)}
-                      className="p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
-                      whileHover={{ scale: 1.1 }}
-                      whileTap={{ scale: 0.9 }}
-                    >
-                      <Star className={`h-4 w-4 ${post.isFeatured ? 'text-yellow-500' : 'text-gray-400'}`} />
-                    </motion.button>
-                  </div>
-                </div>
-
-                {/* Content */}
-                <div className="p-6">
-                  {/* Category and Status */}
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs text-gray-500 uppercase font-medium">
-                      {post.category}
-                    </span>
-                    <div className="flex items-center gap-2">
-                      {post.isPublished ? (
-                        <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-lg">
-                          Đã xuất bản
-                        </span>
-                      ) : (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg">
-                          Bản nháp
-                        </span>
+                    <div className="absolute top-3 right-3 flex items-center gap-2">
+                      {post.isFeatured && (
+                        <div className="p-1 bg-yellow-500 rounded-full">
+                          <Star className="h-4 w-4 text-white" />
+                        </div>
                       )}
+                      <motion.button
+                        onClick={() => toggleFeatured(post)}
+                        className="p-1 bg-white/80 rounded-full hover:bg-white transition-colors"
+                        whileHover={{ scale: 1.1 }}
+                        whileTap={{ scale: 0.9 }}
+                      >
+                        <Star className={`h-4 w-4 ${post.isFeatured ? 'text-yellow-500' : 'text-gray-400'}`} />
+                      </motion.button>
                     </div>
                   </div>
 
-                  {/* Title */}
-                  <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-lg">
-                    {post.title}
-                  </h3>
-
-                  {/* Excerpt */}
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-3">
-                    {post.excerpt}
-                  </p>
-
-                  {/* Tags */}
-                  {post.tags.length > 0 && (
-                    <div className="flex flex-wrap gap-1 mb-4">
-                      {post.tags.slice(0, 3).map((tag, tagIndex) => (
-                        <span
-                          key={tagIndex}
-                          className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                      {post.tags.length > 3 && (
-                        <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg">
-                          +{post.tags.length - 3}
-                        </span>
-                      )}
-                    </div>
-                  )}
-
-                  {/* Meta */}
-                  <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
-                    <div className="flex items-center">
-                      <Calendar className="h-3 w-3 mr-1" />
-                      {formatDate(post.updatedAt)}
-                    </div>
-                    <span>{getReadTime(post.content)}</span>
-                  </div>
-
-                  {/* Stats and Actions */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center space-x-4 text-xs text-gray-500">
-                      <div className="flex items-center">
-                        <Eye className="h-3 w-3 mr-1" />
-                        {post.viewCount}
+                  {/* Content */}
+                  <div className="p-6">
+                    {/* Category and Status */}
+                    <div className="flex items-center justify-between mb-3">
+                      <span className="text-xs text-gray-500 uppercase font-medium">
+                        {post.category}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        {post.isPublished ? (
+                          <span className="px-2 py-1 bg-green-100 text-green-700 text-xs rounded-lg">
+                            Đã xuất bản
+                          </span>
+                        ) : (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-700 text-xs rounded-lg">
+                            Bản nháp
+                          </span>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-1">
+
+                    {/* Title */}
+                    <h3 className="font-semibold text-gray-900 mb-2 line-clamp-2 text-lg">
+                      {post.title}
+                    </h3>
+
+                    {/* Excerpt */}
+                    <p className="text-gray-600 text-sm mb-4 line-clamp-3">
+                      {post.excerpt}
+                    </p>
+
+                    {/* Tags */}
+                    {post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-4">
+                        {post.tags.slice(0, 3).map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            className="px-2 py-1 bg-blue-100 text-blue-700 text-xs rounded-lg"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                        {post.tags.length > 3 && (
+                          <span className="px-2 py-1 bg-gray-100 text-gray-600 text-xs rounded-lg">
+                            +{post.tags.length - 3}
+                          </span>
+                        )}
+                      </div>
+                    )}
+
+                    {/* Meta */}
+                    <div className="flex items-center justify-between text-xs text-gray-500 mb-4">
+                      <div className="flex items-center">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {formatDate(post.updatedAt)}
+                      </div>
+                      <span>{getReadTime(post.content)}</span>
+                    </div>
+
+                    {/* Stats and Actions */}
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center space-x-4 text-xs text-gray-500">
+                        <div className="flex items-center">
+                          <Eye className="h-3 w-3 mr-1" />
+                          {post.viewCount}
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <motion.button
+                          onClick={() => togglePublish(post)}
+                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Globe className="h-4 w-4 text-gray-600" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => setEditingPost(post)}
+                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Edit className="h-4 w-4 text-gray-600" />
+                        </motion.button>
+                        <motion.button
+                          onClick={() => deletePost(post.id)}
+                          className="p-1 rounded-lg hover:bg-red-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Trash2 className="h-4 w-4 text-red-500" />
+                        </motion.button>
+                      </div>
+                    </div>
+                  </div>
+                </motion.article>
+              ) : (
+                // Feed View (Instagram style)
+                <motion.article
+                  key={post.id}
+                  className="bg-white/80 backdrop-blur-xl rounded-2xl shadow-soft border border-white/20 overflow-hidden hover:shadow-lg transition-all duration-300"
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index, duration: 0.5 }}
+                  whileHover={{ scale: 1.01, y: -2 }}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between p-4 border-b border-gray-100">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-10 h-10 bg-gradient-to-r from-blue-400 to-purple-400 rounded-full flex items-center justify-center">
+                        <BookOpen className="h-5 w-5 text-white" />
+                      </div>
+                      <div>
+                        <div className="font-semibold text-gray-900">mygather</div>
+                        <div className="text-xs text-gray-500">{formatDate(post.updatedAt)}</div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {post.isFeatured && (
+                        <Star className="h-4 w-4 text-yellow-500" />
+                      )}
                       <motion.button
-                        onClick={() => togglePublish(post)}
+                        onClick={() => toggleFeatured(post)}
                         className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
                         whileHover={{ scale: 1.1 }}
                         whileTap={{ scale: 0.9 }}
                       >
-                        <Globe className="h-4 w-4 text-gray-600" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => setEditingPost(post)}
-                        className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <Edit className="h-4 w-4 text-gray-600" />
-                      </motion.button>
-                      <motion.button
-                        onClick={() => deletePost(post.id)}
-                        className="p-1 rounded-lg hover:bg-red-100 transition-colors"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <Trash2 className="h-4 w-4 text-red-500" />
+                        <Star className={`h-4 w-4 ${post.isFeatured ? 'text-yellow-500' : 'text-gray-400'}`} />
                       </motion.button>
                     </div>
                   </div>
-                </div>
-              </motion.article>
+
+                  {/* Image */}
+                  <div className="aspect-square bg-gradient-to-br from-blue-100 to-purple-100 relative overflow-hidden">
+                    {post.imageUrl ? (
+                      <img
+                        src={post.imageUrl}
+                        alt={post.title}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center">
+                        <ImageIcon className="h-16 w-16 text-gray-400" />
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Actions */}
+                  <div className="p-4">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center space-x-4">
+                        <motion.button
+                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Heart className="h-6 w-6 text-gray-600" />
+                        </motion.button>
+                        <motion.button
+                          className="p-1 rounded-lg hover:bg-gray-100 transition-colors"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Share2 className="h-6 w-6 text-gray-600" />
+                        </motion.button>
+                      </div>
+                      <motion.button
+                        onClick={() => togglePublish(post)}
+                        className={`px-3 py-1 rounded-lg text-xs font-medium transition-colors ${
+                          post.isPublished 
+                            ? 'bg-green-100 text-green-700' 
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        {post.isPublished ? 'Đã xuất bản' : 'Bản nháp'}
+                      </motion.button>
+                    </div>
+
+                    {/* Likes */}
+                    <div className="text-sm font-semibold text-gray-900 mb-2">
+                      {post.viewCount} lượt xem
+                    </div>
+
+                    {/* Content */}
+                    <div className="mb-3">
+                      <span className="font-semibold text-gray-900 mr-2">mygather</span>
+                      <span className="text-gray-900">{post.title}</span>
+                    </div>
+                    
+                    {post.excerpt && (
+                      <p className="text-gray-600 text-sm mb-3 line-clamp-2">
+                        {post.excerpt}
+                      </p>
+                    )}
+
+                    {/* Tags */}
+                    {post.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1 mb-3">
+                        {post.tags.map((tag, tagIndex) => (
+                          <span
+                            key={tagIndex}
+                            className="text-blue-600 text-sm"
+                          >
+                            #{tag}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Comments */}
+                    <div className="text-sm text-gray-500 mb-3">
+                      Xem tất cả {post.viewCount} lượt xem
+                    </div>
+
+                    {/* Add comment */}
+                    <div className="flex items-center space-x-2 pt-3 border-t border-gray-100">
+                      <input
+                        type="text"
+                        placeholder="Thêm bình luận..."
+                        className="flex-1 text-sm bg-transparent border-none outline-none placeholder-gray-400"
+                      />
+                      <motion.button
+                        className="text-blue-600 text-sm font-semibold"
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        Đăng
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.article>
+              )
             ))
           ) : (
             <div className="col-span-full flex min-h-[400px] items-center justify-center">

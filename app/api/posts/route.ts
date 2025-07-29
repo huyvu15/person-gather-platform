@@ -11,7 +11,7 @@ export async function GET(request: NextRequest) {
 
     const where: any = {}
 
-    // Chỉ lọc theo isPublished nếu có tham số
+    // Chỉ lọc theo isPublished nếu có tham số published
     if (searchParams.has('published')) {
       where.isPublished = isPublished
     }
@@ -29,6 +29,8 @@ export async function GET(request: NextRequest) {
       ]
     }
 
+    console.log('API query where:', where) // Debug log
+
     const posts = await prisma.post.findMany({
       where,
       orderBy: [
@@ -36,6 +38,8 @@ export async function GET(request: NextRequest) {
         { createdAt: 'desc' }
       ]
     })
+
+    console.log('API returned posts:', posts.length) // Debug log
 
     return NextResponse.json(posts)
   } catch (error) {
