@@ -31,13 +31,23 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
   if (!isOpen || !image) return null
 
   const formatDate = (date: Date) => {
-    return new Intl.DateTimeFormat('vi-VN', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit',
-    }).format(date)
+    try {
+      // Check if the date is valid
+      if (!date || isNaN(date.getTime())) {
+        return 'Ngày không xác định'
+      }
+      
+      return new Intl.DateTimeFormat('vi-VN', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+        hour: '2-digit',
+        minute: '2-digit',
+      }).format(date)
+    } catch (error) {
+      console.error('Error formatting date:', error)
+      return 'Ngày không xác định'
+    }
   }
 
   const formatFileSize = (bytes: number) => {
@@ -57,8 +67,6 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
     document.body.removeChild(link)
   }
 
-  const handleZoomIn = () => setScale(prev => Math.min(prev + 0.25, 5))
-  const handleZoomOut = () => setScale(prev => Math.max(prev - 0.25, 0.25))
   const handleRotate = () => setRotation(prev => prev + 90)
   const handleReset = () => {
     setScale(1)
@@ -67,14 +75,14 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
   }
 
   const handleMouseDown = (e: React.MouseEvent) => {
-    if (scale > 1) {
+    if (scale > 1.005) {
       setIsDragging(true)
       setDragStart({ x: e.clientX - position.x, y: e.clientY - position.y })
     }
   }
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (isDragging && scale > 1) {
+    if (isDragging && scale > 1.005) {
       setPosition({
         x: e.clientX - dragStart.x,
         y: e.clientY - dragStart.y,
@@ -88,11 +96,8 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
 
   const handleWheel = (e: React.WheelEvent) => {
     e.preventDefault()
-    if (e.deltaY < 0) {
-      handleZoomIn()
-    } else {
-      handleZoomOut()
-    }
+    const delta = e.deltaY > 0 ? -0.005 : 0.005
+    setScale(prev => Math.max(0.95, Math.min(1.1, prev + delta)))
   }
 
   return (
@@ -110,31 +115,32 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
             
             <div className="flex items-center space-x-2">
               <button
-                onClick={handleZoomOut}
-                disabled={scale <= 0.25}
-                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg disabled:opacity-50 transition-colors"
-                title="Thu nhỏ"
-              >
-                <ZoomOut className="h-4 w-4" />
-              </button>
-              <span className="text-white text-sm px-2">
-                {Math.round(scale * 100)}%
-              </span>
-              <button
-                onClick={handleZoomIn}
-                disabled={scale >= 5}
-                className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg disabled:opacity-50 transition-colors"
-                title="Phóng to"
-              >
-                <ZoomIn className="h-4 w-4" />
-              </button>
-              <button
                 onClick={handleRotate}
                 className="p-2 text-white hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
                 title="Xoay"
               >
                 <RotateCw className="h-4 w-4" />
               </button>
+              
+              <div className="flex items-center space-x-3 px-4">
+                <span className="text-white text-sm">Zoom</span>
+                <input
+                  type="range"
+                  min="0.95"
+                  max="1.1"
+                  step="0.005"
+                  value={scale}
+                  onChange={(e) => setScale(parseFloat(e.target.value))}
+                  className="w-24 h-2 bg-white/20 rounded-lg appearance-none cursor-pointer slider"
+                  style={{
+                    background: `linear-gradient(to right, #ffffff 0%, #ffffff ${((scale - 0.95) / 0.15) * 100}%, rgba(255,255,255,0.2) ${((scale - 0.95) / 0.15) * 100}%, rgba(255,255,255,0.2) 100%)`
+                  }}
+                />
+                <span className="text-white text-sm min-w-[3rem] text-center">
+                  {Math.round(scale * 100)}%
+                </span>
+              </div>
+              
               <button
                 onClick={handleReset}
                 className="px-3 py-1 text-white text-sm hover:bg-white hover:bg-opacity-20 rounded-lg transition-colors"
@@ -154,13 +160,13 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
           onMouseUp={handleMouseUp}
           onMouseLeave={handleMouseUp}
           onWheel={handleWheel}
-          style={{ cursor: isDragging ? 'grabbing' : scale > 1 ? 'grab' : 'default' }}
+          style={{ cursor: isDragging ? 'grabbing' : scale > 1.005 ? 'grab' : 'default' }}
         >
-          <div className="relative max-w-full max-h-full">
+          <div className="relative w-full h-full flex items-center justify-center">
             <img
               src={image.url}
               alt={`Memory ${image.key}`}
-              className="max-w-none select-none"
+              className="max-w-full max-h-full object-contain select-none"
               style={{
                 transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
                 transition: isDragging ? 'none' : 'transform 0.2s ease-in-out',

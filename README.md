@@ -22,7 +22,10 @@ cd mygather
 ### 2. Cài đặt dependencies
 ```bash
 npm install
+npm install @prisma/client prisma pg
+npx prisma generate
 ```
+
 
 ### 3. Cấu hình Environment Variables
 

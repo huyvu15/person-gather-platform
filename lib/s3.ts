@@ -109,7 +109,11 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
       const image: S3Image = {
         key: object.Key,
         url: '', // Will be filled later
-        lastModified: object.LastModified || new Date(),
+        lastModified: (() => {
+          // Ensure we have a valid date
+          const date = object.LastModified || new Date()
+          return isNaN(date.getTime()) ? new Date() : date
+        })(),
         size: object.Size || 0,
         contentType: 'image/jpeg',
         folder,
@@ -125,6 +129,11 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
         if (filters.dateRange) {
           const imageDate = image.lastModified
           const now = new Date()
+          
+          // Skip invalid dates
+          if (isNaN(imageDate.getTime())) {
+            continue
+          }
           
           switch (filters.dateRange) {
             case 'today':
@@ -162,7 +171,17 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
     }
 
     // Sort by last modified date (newest first)
-    const sortedImages = images.sort((a, b) => b.lastModified.getTime() - a.lastModified.getTime())
+    const sortedImages = images.sort((a, b) => {
+      const aTime = a.lastModified.getTime()
+      const bTime = b.lastModified.getTime()
+      
+      // Handle invalid dates
+      if (isNaN(aTime) && isNaN(bTime)) return 0
+      if (isNaN(aTime)) return 1
+      if (isNaN(bTime)) return -1
+      
+      return bTime - aTime
+    })
 
     // Generate presigned URLs in parallel (limited to 10 at a time)
     const batchSize = 10

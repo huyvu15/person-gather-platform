@@ -1,172 +1,152 @@
-import { Suspense } from 'react'
-import { Camera, Heart, Users, Calendar, Folder, Upload, TrendingUp, Clock } from 'lucide-react'
-import { listImagesFromS3 } from '@/lib/s3'
+'use client'
 
-async function getStats() {
-  try {
-    const images = await listImagesFromS3()
-    return {
-      totalImages: images.length,
-      totalSize: images.reduce((acc, img) => acc + img.size, 0),
-      recentImages: images.slice(0, 6),
-      folders: ['memories', 'family', 'travel', 'work'], // Mock data
-      todayUploads: Math.floor(Math.random() * 10) + 1,
-      weeklyGrowth: Math.floor(Math.random() * 20) + 5
-    }
-  } catch (error) {
-    console.error('Error loading stats:', error)
-    return {
-      totalImages: 0,
-      totalSize: 0,
-      recentImages: [],
-      folders: [],
-      todayUploads: 0,
-      weeklyGrowth: 0
-    }
+import { motion } from 'framer-motion'
+import Link from 'next/link'
+
+export default function HomePage() {
+  const transitionDelay = 0.7
+  const buttonAnimationVariants = {
+    initial: { scale: 0 },
+    animate: { scale: 1 },
+    whileHover: { scale: 1.02 },
+    whileTap: { scale: 1.01 },
   }
-}
+  
+  const heroAnimationVariants = {
+    initial: { opacity: 0, y: 5, scaleX: 1 },
+    animate: { opacity: 1, y: 0, scaleX: 1 },
+  }
 
-function LoadingSpinner() {
-  return (
-    <div className="flex min-h-[200px] items-center justify-center">
-      <div className="text-center">
-        <div className="mx-auto mb-4 h-8 w-8 animate-spin rounded-full border-4 border-primary-200 border-t-primary-600"></div>
-        <p className="text-neutral-600">Đang tải...</p>
-      </div>
-    </div>
-  )
-}
-
-export default async function HomePage() {
-  const stats = await getStats()
+  const polaroidVariants = {
+    initial: { opacity: 0, rotate: -5, y: 20 },
+    animate: { opacity: 1, rotate: 0, y: 0 },
+  }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-purple-50 to-pink-50">
-      <div className="p-6">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary-600 to-accent-600 bg-clip-text text-transparent">
-            Chào mừng trở lại! 👋
-          </h1>
-          <p className="text-neutral-600 mt-2">Đây là tổng quan về dữ liệu của bạn</p>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="p-3 bg-gradient-primary rounded-xl">
-                <Camera className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-neutral-600">Tổng ảnh</p>
-                <p className="text-2xl font-bold text-neutral-900">{stats.totalImages}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="p-3 bg-gradient-success rounded-xl">
-                <Folder className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-neutral-600">Thư mục</p>
-                <p className="text-2xl font-bold text-neutral-900">{stats.folders.length}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="p-3 bg-gradient-warning rounded-xl">
-                <Upload className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-neutral-600">Hôm nay</p>
-                <p className="text-2xl font-bold text-neutral-900">{stats.todayUploads}</p>
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <div className="flex items-center">
-              <div className="p-3 bg-gradient-accent rounded-xl">
-                <TrendingUp className="h-6 w-6 text-white" />
-              </div>
-              <div className="ml-4">
-                <p className="text-sm font-medium text-neutral-600">Tăng trưởng</p>
-                <p className="text-2xl font-bold text-neutral-900">+{stats.weeklyGrowth}%</p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Recent Images */}
-        <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 p-6 mb-8">
-          <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-neutral-900">Ảnh gần đây</h2>
-            <a href="/memories" className="text-primary-600 hover:text-primary-700 text-sm font-medium hover:scale-105 transition-transform">
-              Xem tất cả →
-            </a>
-          </div>
-          
-          <Suspense fallback={<LoadingSpinner />}>
-            {stats.recentImages.length > 0 ? (
-              <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                {stats.recentImages.map((image) => (
-                  <div key={image.key} className="aspect-square rounded-xl overflow-hidden bg-neutral-100 hover:shadow-glow transition-all duration-300 hover:scale-105 group">
-                    <img
-                      src={image.url}
-                      alt="Recent memory"
-                      className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
-                      loading="lazy"
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="text-center py-8">
-                <div className="mx-auto mb-4 h-16 w-16 rounded-full bg-gradient-primary flex items-center justify-center animate-bounce-gentle">
-                  <Camera className="h-8 w-8 text-white" />
+    <div className="min-h-screen bg-gradient-to-b from-pink-50 via-white to-white flex items-center justify-center px-4 sm:px-8">
+      <div className="max-w-7xl mx-auto flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-32">
+        {/* Left Section - Polaroid Stack */}
+        <div className="relative w-full max-w-md lg:max-w-lg">
+          {/* Polaroid Photos Stack */}
+          <motion.div
+            className="relative"
+            initial="initial"
+            animate="animate"
+            transition={{ delay: 0.5, duration: 0.8 }}
+          >
+            {/* Back Polaroid */}
+            <motion.div
+              className="absolute -bottom-4 -right-4 w-64 h-80 bg-white rounded-lg shadow-lg transform rotate-6"
+              variants={polaroidVariants}
+              transition={{ delay: 0.6, duration: 0.6 }}
+            >
+              <div className="p-3">
+                <div className="w-full h-48 bg-gradient-to-br from-orange-400 to-pink-500 rounded"></div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-handwriting text-gray-700">Luding fon, Us</p>
                 </div>
-                <h3 className="text-sm font-medium text-neutral-900">Chưa có ảnh</h3>
-                <p className="mt-1 text-sm text-neutral-500">Bắt đầu tải lên ảnh đầu tiên của bạn</p>
               </div>
-            )}
-          </Suspense>
+            </motion.div>
+
+            {/* Middle Polaroid */}
+            <motion.div
+              className="absolute -bottom-2 -right-2 w-64 h-80 bg-white rounded-lg shadow-lg transform -rotate-3"
+              variants={polaroidVariants}
+              transition={{ delay: 0.7, duration: 0.6 }}
+            >
+              <div className="p-3">
+                <div className="w-full h-48 bg-gradient-to-br from-orange-300 to-yellow-400 rounded"></div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-handwriting text-gray-700">Car</p>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Front Polaroid */}
+            <motion.div
+              className="relative w-64 h-80 bg-white rounded-lg shadow-xl transform rotate-2"
+              variants={polaroidVariants}
+              transition={{ delay: 0.8, duration: 0.6 }}
+            >
+              <div className="p-3">
+                <div className="w-full h-48 bg-gradient-to-br from-orange-500 to-red-500 rounded relative overflow-hidden">
+                  {/* Ferris wheel silhouette */}
+                  <div className="absolute bottom-0 left-1/2 transform -translate-x-1/2 w-16 h-16">
+                    <div className="w-full h-full border-4 border-white rounded-full"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-12 h-12 border-2 border-white rounded-full"></div>
+                    <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-8 h-8 border border-white rounded-full"></div>
+                  </div>
+                </div>
+                <div className="mt-3 text-center">
+                  <p className="text-sm font-handwriting text-gray-700">Dubai, AE</p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
 
-        {/* Quick Actions */}
-        <div className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6">
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 p-6 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Thao tác nhanh</h3>
-            <div className="space-y-3">
-              <button className="w-full flex items-center justify-center px-4 py-3 bg-gradient-primary text-white rounded-xl hover:shadow-glow transition-all duration-300 hover:scale-105">
-                <Upload className="h-4 w-4 mr-2" />
-                Tải lên ảnh
-              </button>
-              <button className="w-full flex items-center justify-center px-4 py-3 border border-neutral-300 text-neutral-700 bg-white/50 rounded-xl hover:bg-white transition-all duration-300 hover:scale-105">
-                <Folder className="h-4 w-4 mr-2" />
-                Tạo thư mục mới
-              </button>
-            </div>
-          </div>
-
-          <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 p-6 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
-            <h3 className="text-lg font-semibold text-neutral-900 mb-4">Thư mục</h3>
-            <div className="space-y-2">
-              {stats.folders.map((folder) => (
-                <div key={folder} className="flex items-center justify-between p-3 bg-white/50 rounded-xl hover:bg-white transition-all duration-300 cursor-pointer hover:scale-105">
-                  <div className="flex items-center">
-                    <Folder className="h-4 w-4 text-neutral-500 mr-2" />
-                    <span className="text-sm font-medium text-neutral-700 capitalize">{folder}</span>
-                  </div>
-                  <span className="text-xs text-neutral-500">0 ảnh</span>
-                </div>
-              ))}
-            </div>
-          </div>
+        {/* Right Section - Text and Buttons */}
+        <div className="flex flex-col items-center lg:items-start text-center lg:text-left gap-6 max-w-lg">
+          <motion.h1
+            className="text-3xl sm:text-4xl lg:text-5xl font-light text-gray-1200 tracking-tight"
+            variants={heroAnimationVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 1 * transitionDelay, duration: 0.4 }}
+          >
+            Capture Your
+          </motion.h1>
+          <motion.h1
+            className="text-5xl sm:text-6xl lg:text-7xl font-bold text-gray-900 tracking-tight"
+            variants={heroAnimationVariants}
+            initial="initial"
+            animate="animate"
+            transition={{ delay: 2.3 * transitionDelay, duration: 0.7 }}
+          >
+            Travel Memories
+          </motion.h1>
+          <motion.p
+            className="text-lg sm:text-xl text-gray-600 leading-relaxed max-w-md"
+            variants={heroAnimationVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 3.5 * transitionDelay, duration: 0.7 }}
+          >
+            Collect, share and remember your adventures in a space that celebrates
+            the essence of exploration.
+          </motion.p>
+          <motion.div
+            className="flex flex-col sm:flex-row gap-4 w-full sm:w-auto"
+            variants={heroAnimationVariants}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 3.5 * transitionDelay, duration: 0.7 }}
+          >
+            <motion.button
+              className="bg-blue-600 hover:bg-blue-700 text-white px-8 py-4 text-lg font-semibold rounded-xl transition-colors duration-300 shadow-lg"
+              variants={buttonAnimationVariants}
+              initial="initial"
+              animate="animate"
+              whileHover="whileHover"
+              whileTap="whileTap"
+            >
+              <Link href="/memories" className="block w-full h-full flex items-center justify-center">
+                Get Started
+              </Link>
+            </motion.button>
+            <motion.button
+              className="bg-white hover:bg-gray-50 text-gray-900 px-8 py-4 text-lg font-semibold rounded-xl transition-colors duration-300 shadow-lg border border-gray-200"
+              variants={buttonAnimationVariants}
+              initial="initial"
+              animate="animate"
+              whileHover="whileHover"
+              whileTap="whileTap"
+            >
+              <Link href="/memories" className="block w-full h-full flex items-center justify-center">
+                Discover
+              </Link>
+            </motion.button>
+          </motion.div>
         </div>
       </div>
     </div>

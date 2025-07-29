@@ -25,6 +25,7 @@ const MemoryCard = memo(function MemoryCard({
   const [isLoading, setIsLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
+  const [isZoomed, setIsZoomed] = useState(false)
 
   const formatDate = useCallback((date: Date | string) => {
     try {
@@ -66,8 +67,8 @@ const MemoryCard = memo(function MemoryCard({
   }, [image.url, image.key])
 
   const handleView = useCallback(() => {
-    onView?.(image)
-  }, [onView, image])
+    setIsZoomed(!isZoomed)
+  }, [isZoomed])
 
   const handleLike = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
@@ -94,7 +95,11 @@ const MemoryCard = memo(function MemoryCard({
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleView}
       >
-        <div className="flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+        <div className={`flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 transition-all duration-300 ${
+          isZoomed 
+            ? 'scale-105 z-50 shadow-2xl' 
+            : 'hover:shadow-glow hover:-translate-y-1'
+        }`}>
           <div className="relative w-20 h-20 overflow-hidden rounded-xl bg-neutral-100 flex-shrink-0">
             {isLoading && (
               <div className="absolute inset-0 flex items-center justify-center">
@@ -114,7 +119,7 @@ const MemoryCard = memo(function MemoryCard({
                 alt={`Memory ${image.key}`}
                 className={`h-full w-full object-cover transition-all duration-300 ${
                   isLoading ? 'opacity-0' : 'opacity-100'
-                }`}
+                } ${isZoomed ? 'scale-110' : ''}`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
                 loading="lazy"
@@ -140,14 +145,6 @@ const MemoryCard = memo(function MemoryCard({
               </div>
               
               <div className="flex items-center space-x-2">
-                <button
-                  onClick={handleView}
-                  className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-white/50 rounded-xl transition-all duration-300"
-                  title="Xem chi tiết"
-                >
-                  <Eye className="h-4 w-4" />
-                </button>
-                
                 <button
                   onClick={handleDownload}
                   className="p-2 text-neutral-600 hover:text-neutral-900 hover:bg-white/50 rounded-xl transition-all duration-300"
@@ -187,7 +184,11 @@ const MemoryCard = memo(function MemoryCard({
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleView}
     >
-      <div className="relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-soft border border-white/20 hover:shadow-glow transition-all duration-300 hover:-translate-y-1">
+      <div className={`relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-soft border border-white/20 transition-all duration-300 ${
+        isZoomed 
+          ? 'scale-110 z-50 shadow-2xl' 
+          : 'hover:shadow-glow hover:-translate-y-1'
+      }`}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
             <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary-500 border-t-transparent"></div>
@@ -209,7 +210,7 @@ const MemoryCard = memo(function MemoryCard({
             alt={`Memory ${image.key}`}
             className={`h-full w-full object-cover transition-all duration-300 ${
               isLoading ? 'opacity-0' : 'opacity-100'
-            } group-hover:scale-110`}
+            } ${isZoomed ? 'scale-105' : 'group-hover:scale-110'}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
             loading="lazy"
@@ -217,7 +218,7 @@ const MemoryCard = memo(function MemoryCard({
         )}
 
         {showDetails && (
-          <div className="memory-overlay">
+          <div className={`memory-overlay ${isZoomed ? 'opacity-100' : ''}`}>
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-sm">
@@ -226,14 +227,6 @@ const MemoryCard = memo(function MemoryCard({
                 </div>
                 
                 <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleView}
-                    className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"
-                    title="Xem chi tiết"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  
                   <button
                     onClick={handleDownload}
                     className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"
