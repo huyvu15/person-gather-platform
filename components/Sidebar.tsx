@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { motion, AnimatePresence } from 'framer-motion'
 import { 
   Home, 
@@ -19,7 +19,8 @@ import {
   Folder,
   BookOpen,
   Star,
-  Camera
+  Camera,
+  Gamepad2
 } from 'lucide-react'
 import { useAuth } from '@/contexts/AuthContext'
 
@@ -72,11 +73,16 @@ export default function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false)
   const [hoveredItem, setHoveredItem] = useState<string | null>(null)
   const pathname = usePathname()
+  const router = useRouter()
   const { user, logout } = useAuth()
   const [isUserMenuOpen, setIsUserMenuOpen] = useState(false)
 
   const handleLogout = () => {
     logout()
+  }
+
+  const handleGame2048 = () => {
+    router.push('/game-2048')
   }
 
   return (
@@ -239,6 +245,17 @@ export default function Sidebar() {
                   <Folder className="h-4 w-4 text-green-600" />
                 </div>
                 <span className="ml-3">Tạo thư mục</span>
+              </motion.button>
+              <motion.button 
+                className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-white/60 rounded-xl transition-all duration-300 group"
+                whileHover={{ x: 5 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={handleGame2048}
+              >
+                <div className="p-1.5 rounded-lg bg-gradient-to-r from-yellow-100 to-orange-100 group-hover:from-yellow-200 group-hover:to-orange-200 transition-all duration-300">
+                  <Gamepad2 className="h-4 w-4 text-yellow-600" />
+                </div>
+                <span className="ml-3">2048 Game</span>
               </motion.button>
             </div>
           </motion.div>

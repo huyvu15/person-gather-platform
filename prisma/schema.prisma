@@ -25,6 +25,7 @@ model User {
   notes     Note[]
   posts     Post[]
   events    Event[]
+  gameScores GameScore[]
 }
 
 model Note {
@@ -78,4 +79,16 @@ model Event {
   updatedAt   DateTime @updatedAt
   userId      String
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model GameScore {
+  id        String   @id @default(cuid())
+  score     Int
+  gameType  String   @default("2048") // for future games
+  duration  Int?     // game duration in seconds
+  moves     Int?     // number of moves made
+  maxTile   Int?     // highest tile achieved
+  createdAt DateTime @default(now())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 } 

@@ -728,12 +728,12 @@ export default function CalendarPage() {
                         title={`Click to create event at ${time} on ${day.day}`}
                       >
                         {/* Add event hint */}
-                        <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
+                        {/* <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none">
                           <div className="bg-gradient-to-r from-purple-500 to-pink-500 text-white px-3 py-1 rounded-full text-xs font-medium shadow-lg">
                             <Plus className="h-3 w-3 inline mr-1" />
                             Add Event
                           </div>
-                        </div>
+                        </div> */}
                         
                         {/* Empty state hint */}
                         {getEventsForDayAndTime(day.day, time).length === 0 && (
