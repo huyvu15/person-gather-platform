@@ -21,3 +21,6 @@ if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 //   console.log('Prisma params:', e.params)
 //   console.log('Prisma duration:', e.duration)
 // }) 
+
+
+//
