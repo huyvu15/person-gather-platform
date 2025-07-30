@@ -12,12 +12,12 @@ export const prisma = globalForPrisma.prisma ?? new PrismaClient({
 if (process.env.NODE_ENV !== 'production') globalForPrisma.prisma = prisma
 
 // Add error handling for connection issues
-prisma.$on('error', (e: any) => {
-  console.error('Prisma error:', e)
-})
+// prisma.$on('error', (e: any) => {
+//   console.error('Prisma error:', e)
+// })
 
-prisma.$on('query', (e: any) => {
-  console.log('Prisma query:', e.query)
-  console.log('Prisma params:', e.params)
-  console.log('Prisma duration:', e.duration)
-}) 
+// prisma.$on('query', (e: any) => {
+//   console.log('Prisma query:', e.query)
+//   console.log('Prisma params:', e.params)
+//   console.log('Prisma duration:', e.duration)
+// }) 
