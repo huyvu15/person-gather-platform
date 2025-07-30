@@ -109,7 +109,7 @@ export default function Sidebar() {
               transition={{ delay: 0.3, duration: 0.5 }}
             >
               <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
-                <Sparkles className="h-6 w-6" />
+                <Sparkles className="h-32 w-6" />
                 MyGather
               </h1>
             </motion.div>
@@ -226,7 +226,7 @@ export default function Sidebar() {
               Thao tác nhanh
             </h3>
             <div className="space-y-2">
-              <motion.button 
+              {/* <motion.button 
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-white/60 rounded-xl transition-all duration-300 group"
                 whileHover={{ x: 5 }}
                 whileTap={{ scale: 0.95 }}
@@ -235,8 +235,8 @@ export default function Sidebar() {
                   <Upload className="h-4 w-4 text-blue-600" />
                 </div>
                 <span className="ml-3">Tải lên ảnh</span>
-              </motion.button>
-              <motion.button 
+              </motion.button> */}
+              {/* <motion.button 
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-white/60 rounded-xl transition-all duration-300 group"
                 whileHover={{ x: 5 }}
                 whileTap={{ scale: 0.95 }}
@@ -245,7 +245,7 @@ export default function Sidebar() {
                   <Folder className="h-4 w-4 text-green-600" />
                 </div>
                 <span className="ml-3">Tạo thư mục</span>
-              </motion.button>
+              </motion.button> */}
               <motion.button 
                 className="flex items-center w-full px-3 py-2 text-sm text-gray-600 hover:bg-white/60 rounded-xl transition-all duration-300 group"
                 whileHover={{ x: 5 }}
@@ -263,7 +263,7 @@ export default function Sidebar() {
 
         {/* User Menu */}
         <motion.div 
-          className="p-4 border-t border-white/20"
+          className="pt-1 pb-2 border-t border-white/20"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.6, duration: 0.5 }}
@@ -271,7 +271,7 @@ export default function Sidebar() {
           <div className="relative">
             <motion.button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="w-full flex items-center justify-between p-3 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 hover:shadow-md transition-all duration-300"
+              className="w-64 mx-auto flex items-center justify-between p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 hover:shadow-md transition-all duration-300"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >
@@ -299,7 +299,7 @@ export default function Sidebar() {
             <AnimatePresence>
               {isUserMenuOpen && !isCollapsed && (
                 <motion.div
-                  className="absolute bottom-full left-0 right-0 mb-2 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-50"
+                  className="absolute bottom-full left-0 right-0 mb-0 bg-white rounded-2xl shadow-lg border border-gray-200 overflow-hidden z-50"
                   initial={{ opacity: 0, y: 10, scale: 0.95 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
                   exit={{ opacity: 0, y: 10, scale: 0.95 }}

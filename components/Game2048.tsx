@@ -12,6 +12,8 @@ import {
   DialogFooter,
 } from "./ui/dialog"
 import { useAuth } from '@/contexts/AuthContext'
+import { useRouter } from 'next/navigation'
+import { ArrowLeft } from 'lucide-react'
 
 const GRID_SIZE = 4
 const CELL_SIZE = 6 // in rem
@@ -38,6 +40,7 @@ export default function Game2048() {
   const [isSaving, setIsSaving] = useState(false)
   const gameContainerRef = useRef<HTMLDivElement>(null)
   const { user } = useAuth()
+  const router = useRouter()
 
   useEffect(() => {
     initializeGame()
@@ -336,9 +339,12 @@ export default function Game2048() {
         <div className="mt-4 text-sm">
           <p><strong>HOW TO PLAY:</strong> Use your <strong>arrow keys</strong> to move the tiles. When two tiles with the same number touch, they <strong>merge into one!</strong></p>
         </div>
-        <div className="mt-4">
+        <div className="mt-4 flex gap-2">
           <Button onClick={initializeGame} className="bg-[#8f7a66] text-white hover:bg-[#9f8a76]">
             New Game
+          </Button>
+          <Button onClick={() => router.back()} className="bg-[#8f7a66] text-white hover:bg-[#9f8a76]">
+            <ArrowLeft className="mr-2" /> Back
           </Button>
         </div>
       </div>

@@ -6,7 +6,7 @@ import { AuthProvider } from '@/contexts/AuthContext'
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'MyGather - Personal Dashboard',
+  title: 'Lưu trữ và cá nhân hóa',
   description: 'A beautiful personal dashboard for managing notes, posts, memories, and calendar events.',
 }
 

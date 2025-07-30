@@ -5,6 +5,7 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, Grid, List, Eye, EyeOff, Search, Filter, Sparkles, Camera, Heart } from 'lucide-react'
 import MemoryGrid from '@/components/MemoryGrid'
 import UploadModal from '@/components/UploadModal'
+import ModernCarousel from '@/components/ModernCarousel'
 import { S3Image } from '@/lib/s3'
 
 interface Filters {
@@ -39,6 +40,7 @@ export default function MemoriesPage() {
   const [isLoading, setIsLoading] = useState(true)
   const [isFilterOpen, setIsFilterOpen] = useState(false)
   const [folders, setFolders] = useState<string[]>([])
+  const [isSlideshowOpen, setIsSlideshowOpen] = useState(false)
 
   // Load images from API when component mounts
   useEffect(() => {
@@ -141,6 +143,14 @@ export default function MemoriesPage() {
     setFilters({})
   }
 
+  const handleOpenSlideshow = () => {
+    setIsSlideshowOpen(true)
+  }
+
+  const handleCloseSlideshow = () => {
+    setIsSlideshowOpen(false)
+  }
+
   return (
     <motion.div 
       className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50"
@@ -148,35 +158,35 @@ export default function MemoriesPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="p-6">
+      <div className="p-3">
         {/* Header with Stats */}
         <motion.div 
-          className="mb-8"
+          className="mb-2"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
         >
-          <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center justify-between mb-2">
             <div>
-              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-3">
-                <Camera className="h-8 w-8" />
+              <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent flex items-center gap-2">
+                <Camera className="h-7 w-7" />
                 Memories
               </h1>
-              <p className="text-gray-600 mt-1">Quản lý và chia sẻ khoảnh khắc đáng nhớ</p>
+              <p className="text-gray-600 mt-1 text-sm">Quản lý và chia sẻ khoảnh khắc đáng nhớ</p>
             </div>
             <motion.div 
-              className="flex items-center gap-4"
+              className="flex items-center gap-3"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
               <div className="text-center">
-                <div className="text-2xl font-bold text-purple-600">{filteredImages.length}</div>
-                <div className="text-sm text-gray-500">Ảnh</div>
+                <div className="text-xl font-bold text-purple-600">{filteredImages.length}</div>
+                <div className="text-xs text-gray-500">Ảnh</div>
               </div>
               <div className="text-center">
-                <div className="text-2xl font-bold text-pink-600">{folders.length}</div>
-                <div className="text-sm text-gray-500">Thư mục</div>
+                <div className="text-xl font-bold text-pink-600">{folders.length}</div>
+                <div className="text-xs text-gray-500">Thư mục</div>
               </div>
             </motion.div>
           </div>
@@ -184,23 +194,23 @@ export default function MemoriesPage() {
 
         {/* Combined Header Bar */}
         <motion.div 
-          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 p-6 mb-8"
+          className="bg-white/90 backdrop-blur-xl rounded-xl shadow-soft border border-white/20 p-2 mb-3"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <div className="flex items-center justify-between space-x-4">
+          <div className="flex items-center justify-between space-x-2">
             {/* Search */}
             <motion.div 
-              className="relative flex-1 max-w-md"
-              whileHover={{ scale: 1.02 }}
+              className="relative flex-1 max-w-xs"
+              whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.2 }}
             >
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Tìm kiếm ảnh..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/50 text-gray-700 placeholder-gray-400 transition-all duration-300"
+                className="w-full pl-9 pr-2 py-2 border border-gray-200 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent bg-white/60 text-gray-700 placeholder-gray-400 text-sm"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -209,17 +219,17 @@ export default function MemoriesPage() {
             {/* Filter */}
             <motion.div 
               className="relative filter-dropdown"
-              whileHover={{ scale: 1.02 }}
+              whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.2 }}
             >
               <motion.button 
                 onClick={() => setIsFilterOpen(!isFilterOpen)}
-                className="flex items-center px-4 py-3 border border-gray-200 rounded-2xl hover:bg-white/60 transition-all duration-300 bg-white/50"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                className="flex items-center px-3 py-2 border border-gray-200 rounded-lg hover:bg-white/60 transition-all duration-300 bg-white/50 text-xs"
+                whileHover={{ scale: 1.04 }}
+                whileTap={{ scale: 0.97 }}
               >
-                <Filter className="h-5 w-5 mr-2 text-purple-600" />
-                <span className="text-sm font-medium text-gray-700">Bộ lọc</span>
+                <Filter className="h-4 w-4 mr-1 text-purple-600" />
+                <span className="font-medium text-gray-700">Bộ lọc</span>
               </motion.button>
               
               <AnimatePresence>
@@ -288,60 +298,76 @@ export default function MemoriesPage() {
 
             {/* View Mode Toggle */}
             <motion.div 
-              className="flex items-center bg-gray-100 rounded-2xl p-1"
-              whileHover={{ scale: 1.05 }}
+              className="flex items-center bg-gray-100 rounded-lg p-1"
+              whileHover={{ scale: 1.03 }}
               transition={{ duration: 0.2 }}
             >
               <motion.button
                 onClick={() => setViewMode('grid')}
-                className={`p-3 rounded-xl transition-all duration-300 ${
+                className={`p-2 rounded-md transition-all duration-300 ${
                   viewMode === 'grid' 
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white'
                 }`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.93 }}
               >
-                <Grid className="h-5 w-5" />
+                <Grid className="h-4 w-4" />
               </motion.button>
               <motion.button
                 onClick={() => setViewMode('list')}
-                className={`p-3 rounded-xl transition-all duration-300 ${
+                className={`p-2 rounded-md transition-all duration-300 ${
                   viewMode === 'list' 
                     ? 'bg-gradient-to-r from-purple-500 to-pink-500 text-white shadow-lg' 
                     : 'text-gray-600 hover:text-gray-900 hover:bg-white'
                 }`}
-                whileHover={{ scale: 1.1 }}
-                whileTap={{ scale: 0.9 }}
+                whileHover={{ scale: 1.08 }}
+                whileTap={{ scale: 0.93 }}
               >
-                <List className="h-5 w-5" />
+                <List className="h-4 w-4" />
               </motion.button>
             </motion.div>
 
             {/* Details Toggle */}
             <motion.button
               onClick={() => setShowDetails(!showDetails)}
-              className={`p-3 rounded-2xl transition-all duration-300 ${
+              className={`p-2 rounded-lg transition-all duration-300 ${
                 showDetails 
                   ? 'bg-gradient-to-r from-pink-500 to-purple-500 text-white shadow-lg' 
                   : 'bg-gray-100 text-gray-600 hover:text-gray-900 hover:bg-white'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.03 }}
+              whileTap={{ scale: 0.97 }}
             >
-              {showDetails ? <Eye className="h-5 w-5" /> : <EyeOff className="h-5 w-5" />}
+              {showDetails ? <Eye className="h-4 w-4" /> : <EyeOff className="h-4 w-4" />}
             </motion.button>
 
+            {/* Slideshow Button */}
+            {filteredImages.length > 1 && (
+              <motion.button
+                onClick={handleOpenSlideshow}
+                className="flex items-center px-3 py-2 bg-gradient-to-r from-blue-500 to-purple-500 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-xs"
+                whileHover={{ scale: 1.04, y: -1 }}
+                whileTap={{ scale: 0.97 }}
+              >
+                <svg className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                Slideshow
+              </motion.button>
+            )}
+
             {/* Upload */}
-            <motion.button 
+            {/* <motion.button 
               onClick={() => setIsUploadModalOpen(true)}
-              className="flex items-center px-6 py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-2xl hover:shadow-lg transition-all duration-300 font-semibold"
-              whileHover={{ scale: 1.05, y: -2 }}
-              whileTap={{ scale: 0.95 }}
+              className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-xs"
+              whileHover={{ scale: 1.04, y: -1 }}
+              whileTap={{ scale: 0.97 }}
             >
-              <Upload className="h-5 w-5 mr-2" />
+              <Upload className="h-4 w-4 mr-1" />
               <span>Tải lên</span>
-            </motion.button>
+            </motion.button> */}
+            {/* Nếu có nút tạo thư mục, cũng xóa hoặc comment tương tự */}
           </div>
         </motion.div>
 
@@ -407,6 +433,13 @@ export default function MemoriesPage() {
             />
           )}
         </AnimatePresence>
+
+        {/* Conveyor Belt Slideshow */}
+        <ModernCarousel
+          images={filteredImages}
+          isOpen={isSlideshowOpen}
+          onClose={handleCloseSlideshow}
+        />
       </div>
     </motion.div>
   )

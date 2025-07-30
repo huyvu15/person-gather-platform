@@ -7,7 +7,8 @@
 - **Quản lý ảnh**: Upload, xem, tải xuống ảnh từ AWS S3
 - **Tìm kiếm & Lọc**: Tìm kiếm nhanh và bộ lọc thông minh
 - **Chế độ xem**: Grid và List view với tùy chỉnh
-- **Zoom ảnh**: Xem chi tiết ảnh với zoom và xoay
+- **Zoom ảnh**: Xem chi tiết ảnh với zoom 1.5x
+- **Slideshow băng chuyền**: Xem ảnh tự động với hiệu ứng trượt ngang
 - **Giao diện đẹp**: Thiết kế hiện đại với glass morphism và gradient
 - **Responsive**: Hoạt động tốt trên mọi thiết bị
 
@@ -95,7 +96,8 @@ mygather/
 │   ├── MemoryCard.tsx    # Card hiển thị ảnh
 │   ├── MemoryGrid.tsx    # Grid layout
 │   ├── SearchAndFilter.tsx # Tìm kiếm và lọc
-│   └── ImageModal.tsx    # Modal xem ảnh
+│   ├── ConveyorBelt.tsx  # Slideshow băng chuyền
+│   └── CarouselModal.tsx # Modal carousel xem ảnh
 ├── lib/                  # Utilities
 │   └── s3.ts            # AWS S3 integration
 ├── .env.example         # Template cho env variables

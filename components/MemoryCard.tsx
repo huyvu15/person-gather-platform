@@ -2,14 +2,13 @@
 
 import { useState, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Calendar, Download, Eye } from 'lucide-react'
+import { Heart, Calendar, Download, Eye, ZoomIn } from 'lucide-react'
 import { S3Image } from '@/lib/s3'
 
 interface MemoryCardProps {
   image: S3Image
   onLike?: (key: string) => void
   isLiked?: boolean
-  onView?: (image: S3Image) => void
   viewMode?: 'grid' | 'list'
   showDetails?: boolean
 }
@@ -18,7 +17,6 @@ const MemoryCard = memo(function MemoryCard({
   image, 
   onLike, 
   isLiked = false, 
-  onView,
   viewMode = 'grid',
   showDetails = true
 }: MemoryCardProps) {
@@ -70,6 +68,11 @@ const MemoryCard = memo(function MemoryCard({
     setIsZoomed(!isZoomed)
   }, [isZoomed])
 
+  const handleZoom = useCallback((e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsZoomed(!isZoomed)
+  }, [isZoomed])
+
   const handleLike = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     onLike?.(image.key)
@@ -87,17 +90,18 @@ const MemoryCard = memo(function MemoryCard({
   if (viewMode === 'list') {
     return (
       <motion.div
-        className="memory-card group cursor-pointer"
+        className={`memory-card group cursor-pointer ${isZoomed ? 'zoomed' : ''}`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
         onClick={handleView}
+        title="Click để xem chi tiết"
       >
         <div className={`flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 transition-all duration-300 ${
           isZoomed 
-            ? 'scale-105 z-50 shadow-2xl' 
+            ? 'shadow-2xl' 
             : 'hover:shadow-glow hover:-translate-y-1'
         }`}>
           <div className="relative w-20 h-20 overflow-hidden rounded-xl bg-neutral-100 flex-shrink-0">
@@ -119,7 +123,7 @@ const MemoryCard = memo(function MemoryCard({
                 alt={`Memory ${image.key}`}
                 className={`h-full w-full object-cover transition-all duration-300 ${
                   isLoading ? 'opacity-0' : 'opacity-100'
-                } ${isZoomed ? 'scale-110' : ''}`}
+                } ${isZoomed ? '' : ''}`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
                 loading="lazy"
@@ -176,17 +180,18 @@ const MemoryCard = memo(function MemoryCard({
 
   return (
     <motion.div
-      className="memory-card group cursor-pointer"
+      className={`memory-card group cursor-pointer ${isZoomed ? 'zoomed' : ''}`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={handleView}
+      title="Click để xem chi tiết"
     >
       <div className={`relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-soft border border-white/20 transition-all duration-300 ${
         isZoomed 
-          ? 'scale-110 z-50 shadow-2xl' 
+          ? 'shadow-2xl' 
           : 'hover:shadow-glow hover:-translate-y-1'
       }`}>
         {isLoading && (
@@ -210,7 +215,7 @@ const MemoryCard = memo(function MemoryCard({
             alt={`Memory ${image.key}`}
             className={`h-full w-full object-cover transition-all duration-300 ${
               isLoading ? 'opacity-0' : 'opacity-100'
-            } ${isZoomed ? 'scale-105' : 'group-hover:scale-110'}`}
+            } ${isZoomed ? '' : 'group-hover:scale-110'}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
             loading="lazy"
@@ -227,6 +232,14 @@ const MemoryCard = memo(function MemoryCard({
                 </div>
                 
                 <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleZoom}
+                    className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"
+                    title="Xem chi tiết"
+                  >
+                    <Eye className="h-4 w-4" />
+                  </button>
+                  
                   <button
                     onClick={handleDownload}
                     className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"

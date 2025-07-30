@@ -4,7 +4,6 @@ import { useState, useCallback, useMemo } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { S3Image } from '@/lib/s3'
 import MemoryCard from './MemoryCard'
-import ImageModal from './ImageModal'
 
 interface MemoryGridProps {
   images: S3Image[]
@@ -14,8 +13,6 @@ interface MemoryGridProps {
 
 export default function MemoryGrid({ images, viewMode = 'grid', showDetails = true }: MemoryGridProps) {
   const [likedImages, setLikedImages] = useState<Set<string>>(new Set())
-  const [selectedImage, setSelectedImage] = useState<S3Image | null>(null)
-  const [isModalOpen, setIsModalOpen] = useState(false)
 
   const handleLike = useCallback((imageKey: string) => {
     setLikedImages(prev => {
@@ -27,16 +24,6 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
       }
       return newSet
     })
-  }, [])
-
-  const handleViewImage = useCallback((image: S3Image) => {
-    setSelectedImage(image)
-    setIsModalOpen(true)
-  }, [])
-
-  const handleCloseModal = useCallback(() => {
-    setIsModalOpen(false)
-    setSelectedImage(null)
   }, [])
 
   // Memoize empty state
@@ -86,7 +73,6 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
                 image={image}
                 onLike={handleLike}
                 isLiked={likedImages.has(image.key)}
-                onView={handleViewImage}
                 viewMode={viewMode}
                 showDetails={showDetails}
               />
@@ -94,14 +80,6 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
           ))}
         </AnimatePresence>
       </motion.div>
-
-      <ImageModal
-        image={selectedImage}
-        isOpen={isModalOpen}
-        onClose={handleCloseModal}
-        onLike={handleLike}
-        isLiked={selectedImage ? likedImages.has(selectedImage.key) : false}
-      />
     </>
   )
 } 

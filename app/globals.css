@@ -333,3 +333,24 @@ textarea:focus-visible {
 .instagram-like:active {
   transform: scale(0.95);
 } 
+
+/* Memory card zoom styles */
+.memory-card.zoomed {
+  position: relative;
+  z-index: 50;
+  transform: scale(1.2);
+  transform-origin: center;
+  transition: transform 0.3s ease-in-out;
+}
+
+.memory-card.zoomed img {
+  transform: scale(1.2);
+  transform-origin: center;
+  transition: transform 0.3s ease-in-out;
+}
+
+/* Ensure zoomed images don't get cut off */
+.memory-card.zoomed {
+  margin: 1rem;
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.3);
+} 

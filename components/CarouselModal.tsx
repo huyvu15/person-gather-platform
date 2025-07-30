@@ -1,38 +1,79 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import { X, Download, Heart, Share2, ZoomIn, ZoomOut, RotateCw, ArrowLeft, ArrowRight } from 'lucide-react'
+import { useState, useEffect, useCallback } from 'react'
+import { motion, AnimatePresence } from 'framer-motion'
+import { X, Download, Heart, Share2, RotateCw, ArrowLeft, ArrowRight, ZoomIn, ZoomOut } from 'lucide-react'
 import { S3Image } from '@/lib/s3'
 
-interface ImageModalProps {
-  image: S3Image | null
+interface CarouselModalProps {
+  images: S3Image[]
+  currentImageIndex: number
   isOpen: boolean
   onClose: () => void
   onLike?: (key: string) => void
   isLiked?: boolean
 }
 
-export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = false }: ImageModalProps) {
+export default function CarouselModal({ 
+  images, 
+  currentImageIndex, 
+  isOpen, 
+  onClose, 
+  onLike, 
+  isLiked = false 
+}: CarouselModalProps) {
+  const [currentIndex, setCurrentIndex] = useState(currentImageIndex)
   const [scale, setScale] = useState(1)
   const [rotation, setRotation] = useState(0)
   const [isDragging, setIsDragging] = useState(false)
   const [dragStart, setDragStart] = useState({ x: 0, y: 0 })
   const [position, setPosition] = useState({ x: 0, y: 0 })
 
+  const currentImage = images[currentIndex]
+
   // Reset zoom and position when image changes
   useEffect(() => {
-    if (image) {
-      setScale(1)
-      setRotation(0)
-      setPosition({ x: 0, y: 0 })
-    }
-  }, [image])
+    setScale(1)
+    setRotation(0)
+    setPosition({ x: 0, y: 0 })
+  }, [currentIndex])
 
-  if (!isOpen || !image) return null
+  // Update current index when prop changes
+  useEffect(() => {
+    setCurrentIndex(currentImageIndex)
+  }, [currentImageIndex])
+
+  const goToPrevious = useCallback(() => {
+    setCurrentIndex(prev => (prev > 0 ? prev - 1 : images.length - 1))
+  }, [images.length])
+
+  const goToNext = useCallback(() => {
+    setCurrentIndex(prev => (prev < images.length - 1 ? prev + 1 : 0))
+  }, [images.length])
+
+  const handleKeyDown = useCallback((e: KeyboardEvent) => {
+    if (e.key === 'ArrowLeft') {
+      goToPrevious()
+    } else if (e.key === 'ArrowRight') {
+      goToNext()
+    } else if (e.key === 'Escape') {
+      onClose()
+    }
+  }, [goToPrevious, goToNext, onClose])
+
+  // Always add keyboard event listener, regardless of modal state
+  useEffect(() => {
+    if (isOpen) {
+      document.addEventListener('keydown', handleKeyDown)
+      return () => document.removeEventListener('keydown', handleKeyDown)
+    }
+  }, [isOpen, handleKeyDown])
+
+  // Early return after all hooks
+  if (!isOpen || !currentImage) return null
 
   const formatDate = (date: Date) => {
     try {
-      // Check if the date is valid
       if (!date || isNaN(date.getTime())) {
         return 'Ngày không xác định'
       }
@@ -60,8 +101,8 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
 
   const handleDownload = () => {
     const link = document.createElement('a')
-    link.href = image.url
-    link.download = image.key.split('/').pop() || 'memory.jpg'
+    link.href = currentImage.url
+    link.download = currentImage.key.split('/').pop() || 'memory.jpg'
     document.body.appendChild(link)
     link.click()
     document.body.removeChild(link)
@@ -108,9 +149,12 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
           <div className="flex items-center justify-between p-4">
             <div className="flex items-center space-x-4 text-white">
               <h3 className="text-lg font-medium truncate max-w-md">
-                {image.key.split('/').pop()}
+                {currentImage.key.split('/').pop()}
               </h3>
-              <span className="text-sm opacity-75">{formatFileSize(image.size)}</span>
+              <span className="text-sm opacity-75">{formatFileSize(currentImage.size)}</span>
+              <span className="text-sm opacity-75">
+                {currentIndex + 1} / {images.length}
+              </span>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -152,6 +196,29 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
           </div>
         </div>
 
+        {/* Navigation Arrows */}
+        {images.length > 1 && (
+          <>
+            <motion.button
+              onClick={goToPrevious}
+              className="absolute left-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full transition-all duration-300 backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ArrowLeft className="h-6 w-6" />
+            </motion.button>
+            
+            <motion.button
+              onClick={goToNext}
+              className="absolute right-4 top-1/2 transform -translate-y-1/2 z-20 p-3 bg-black bg-opacity-50 hover:bg-opacity-70 text-white rounded-full transition-all duration-300 backdrop-blur-sm"
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
+            >
+              <ArrowRight className="h-6 w-6" />
+            </motion.button>
+          </>
+        )}
+
         {/* Image Container */}
         <div 
           className="flex-1 flex items-center justify-center p-4 overflow-hidden"
@@ -162,26 +229,62 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
           onWheel={handleWheel}
           style={{ cursor: isDragging ? 'grabbing' : scale > 1.005 ? 'grab' : 'default' }}
         >
-          <div className="relative w-full h-full flex items-center justify-center">
-            <img
-              src={image.url}
-              alt={`Memory ${image.key}`}
-              className="max-w-full max-h-full object-contain select-none"
-              style={{
-                transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
-                transition: isDragging ? 'none' : 'transform 0.2s ease-in-out',
-              }}
-              draggable={false}
-            />
-          </div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={currentIndex}
+              className="relative w-full h-full flex items-center justify-center"
+              initial={{ opacity: 0, x: 100 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -100 }}
+              transition={{ duration: 0.3 }}
+            >
+              <img
+                src={currentImage.url}
+                alt={`Memory ${currentImage.key}`}
+                className="max-w-full max-h-full object-contain select-none"
+                style={{
+                  transform: `scale(${scale}) rotate(${rotation}deg) translate(${position.x}px, ${position.y}px)`,
+                  transition: isDragging ? 'none' : 'transform 0.2s ease-in-out',
+                }}
+                draggable={false}
+              />
+            </motion.div>
+          </AnimatePresence>
         </div>
+
+        {/* Thumbnail Navigation */}
+        {images.length > 1 && (
+          <div className="absolute bottom-20 left-1/2 transform -translate-x-1/2 z-20">
+            <div className="flex space-x-2 bg-black bg-opacity-50 backdrop-blur-sm rounded-2xl p-2">
+              {images.map((image, index) => (
+                <motion.button
+                  key={image.key}
+                  onClick={() => setCurrentIndex(index)}
+                  className={`w-12 h-12 rounded-lg overflow-hidden border-2 transition-all duration-300 ${
+                    index === currentIndex 
+                      ? 'border-white scale-110' 
+                      : 'border-transparent hover:border-white/50'
+                  }`}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                >
+                  <img
+                    src={image.url}
+                    alt={`Thumbnail ${index + 1}`}
+                    className="w-full h-full object-cover"
+                  />
+                </motion.button>
+              ))}
+            </div>
+          </div>
+        )}
 
         {/* Footer */}
         <div className="absolute bottom-0 left-0 right-0 z-10 bg-black bg-opacity-50 backdrop-blur-sm">
           <div className="flex items-center justify-between p-4">
             <div className="text-white text-sm">
-              <p>Ngày tạo: {formatDate(image.lastModified)}</p>
-              <p>Kích thước: {formatFileSize(image.size)}</p>
+              <p>Ngày tạo: {formatDate(currentImage.lastModified)}</p>
+              <p>Kích thước: {formatFileSize(currentImage.size)}</p>
             </div>
             
             <div className="flex items-center space-x-2">
@@ -202,7 +305,7 @@ export default function ImageModal({ image, isOpen, onClose, onLike, isLiked = f
               
               {onLike && (
                 <button
-                  onClick={() => onLike(image.key)}
+                  onClick={() => onLike(currentImage.key)}
                   className={`p-2 rounded-lg transition-colors ${
                     isLiked 
                       ? 'bg-red-500 text-white' 

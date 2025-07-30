@@ -224,10 +224,10 @@ export default function PostsPage() {
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
     >
-      <div className="p-6">
+      <div className="p-4">
         {/* Header */}
         <motion.div 
-          className="mb-8"
+          className="mb-4"
           initial={{ y: -20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.2, duration: 0.5 }}
@@ -254,23 +254,23 @@ export default function PostsPage() {
 
         {/* Filters */}
         <motion.div 
-          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 p-6 mb-8"
+          className="bg-white/80 backdrop-blur-xl rounded-3xl shadow-soft border border-white/20 p-4 mb-4"
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.3, duration: 0.5 }}
         >
-          <div className="flex items-center justify-between space-x-4">
+          <div className="flex items-center justify-between space-x-3">
             {/* Search */}
             <motion.div 
-              className="relative flex-1 max-w-md"
-              whileHover={{ scale: 1.02 }}
+              className="relative flex-1 max-w-sm"
+              whileHover={{ scale: 1.01 }}
               transition={{ duration: 0.2 }}
             >
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
                 placeholder="Tìm kiếm bài viết..."
-                className="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-2xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 text-gray-700 placeholder-gray-400 transition-all duration-300"
+                className="w-full pl-10 pr-3 py-2 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white/50 text-gray-700 placeholder-gray-400 text-sm transition-all duration-300"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -280,8 +280,8 @@ export default function PostsPage() {
             <motion.select
               value={selectedCategory}
               onChange={(e) => setSelectedCategory(e.target.value)}
-              className="px-4 py-3 border border-gray-200 rounded-2xl bg-white/50 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300"
-              whileHover={{ scale: 1.02 }}
+              className="px-3 py-2 border border-gray-200 rounded-xl bg-white/50 text-gray-700 focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all duration-300 text-sm"
+              whileHover={{ scale: 1.01 }}
             >
               <option value="all">Tất cả danh mục</option>
               {categories.map(category => (
@@ -294,37 +294,37 @@ export default function PostsPage() {
             {/* Published Toggle */}
             <motion.button
               onClick={() => setShowPublished(!showPublished)}
-              className={`px-4 py-3 rounded-2xl font-medium transition-all duration-300 ${
+              className={`px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
                 showPublished 
                   ? 'bg-gradient-to-r from-green-500 to-blue-500 text-white shadow-lg' 
                   : 'bg-white/50 text-gray-700 hover:bg-white/70'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
-              <Globe className="h-5 w-5 mr-2 inline" />
+              <Globe className="h-4 w-4 mr-1 inline" />
               {showPublished ? 'Đã xuất bản' : 'Tất cả'}
             </motion.button>
 
             {/* View Mode Toggle */}
             <motion.button
               onClick={() => setViewMode(viewMode === 'grid' ? 'feed' : 'grid')}
-              className={`px-4 py-3 rounded-2xl font-medium transition-all duration-300 ${
+              className={`px-3 py-2 rounded-xl font-medium transition-all duration-300 text-sm ${
                 viewMode === 'grid'
                   ? 'bg-gradient-to-r from-blue-500 to-purple-500 text-white shadow-lg' 
                   : 'bg-white/50 text-gray-700 hover:bg-white/70'
               }`}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
             >
               {viewMode === 'grid' ? (
                 <>
-                  <Grid3X3 className="h-5 w-5 mr-2 inline" />
+                  <Grid3X3 className="h-4 w-4 mr-1 inline" />
                   Grid
                 </>
               ) : (
                 <>
-                  <List className="h-5 w-5 mr-2 inline" />
+                  <List className="h-4 w-4 mr-1 inline" />
                   Feed
                 </>
               )}
