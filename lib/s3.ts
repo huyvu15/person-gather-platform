@@ -1,12 +1,17 @@
-import { S3Client, ListObjectsV2Command, GetObjectCommand } from '@aws-sdk/client-s3'
+import { S3Client, ListObjectsV2Command, GetObjectCommand, PutObjectCommand, DeleteObjectCommand } from '@aws-sdk/client-s3'
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner'
 
 // Cache for presigned URLs
 const urlCache = new Map<string, { url: string; expires: number }>()
 const CACHE_DURATION = 50 * 60 * 1000 // 50 minutes
 
+// Get region from environment or default to ap-southeast-1
+const getS3Region = () => {
+  return process.env.AWS_REGION || 'ap-southeast-1'
+}
+
 const s3Client = new S3Client({
-  region: process.env.AWS_REGION || 'us-east-1',
+  region: getS3Region(),
   credentials: {
     accessKeyId: process.env.AWS_ACCESS_KEY_ID!,
     secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY!,
@@ -17,6 +22,8 @@ const s3Client = new S3Client({
       timeout: 10000, // 10 seconds
     },
   },
+  // Force path-style URLs for better compatibility
+  forcePathStyle: true,
 })
 
 export interface S3Image {
@@ -27,6 +34,7 @@ export interface S3Image {
   contentType: string
   folder: string
   tags: string[]
+  userId: string
 }
 
 export interface FilterOptions {
@@ -35,6 +43,13 @@ export interface FilterOptions {
   tags?: string[]
   favorites?: boolean
   search?: string
+  userId?: string
+}
+
+// Helper function to get user-specific folder path
+function getUserFolderPath(userId: string): string {
+  const baseFolder = process.env.AWS_S3_FOLDER_PATH || 'Pictures/'
+  return `${baseFolder}users/${userId}/`
 }
 
 async function getPresignedUrl(key: string): Promise<string> {
@@ -68,15 +83,15 @@ async function getPresignedUrl(key: string): Promise<string> {
   }
 }
 
-export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image[]> {
+export async function listImagesFromS3(userId: string, filters?: FilterOptions): Promise<S3Image[]> {
   try {
     const bucketName = process.env.AWS_S3_BUCKET_NAME!
-    const baseFolder = process.env.AWS_S3_FOLDER_PATH || 'Pictures/'
+    const userFolder = getUserFolderPath(userId)
     
     const command = new ListObjectsV2Command({
       Bucket: bucketName,
-      Prefix: baseFolder,
-      MaxKeys: 100, // Giảm số lượng để tối ưu
+      Prefix: userFolder,
+      MaxKeys: 50, // Giảm số lượng để tối ưu hơn
     })
 
     const response = await s3Client.send(command)
@@ -99,8 +114,8 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
       
       if (!isImage) continue
 
-      // Extract folder from key
-      const relativePath = object.Key!.replace(baseFolder, '')
+      // Extract folder from key (relative to user folder)
+      const relativePath = object.Key!.replace(userFolder, '')
       const folder = relativePath.split('/')[0] || 'root'
 
       // Generate tags
@@ -118,6 +133,7 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
         contentType: 'image/jpeg',
         folder,
         tags,
+        userId,
       }
 
       // Apply filters
@@ -183,8 +199,8 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
       return bTime - aTime
     })
 
-    // Generate presigned URLs in parallel (limited to 10 at a time)
-    const batchSize = 10
+    // Generate presigned URLs in parallel (limited to 5 at a time for better performance)
+    const batchSize = 5
     for (let i = 0; i < sortedImages.length; i += batchSize) {
       const batch = sortedImages.slice(i, i + batchSize)
       await Promise.all(
@@ -192,7 +208,6 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
           try {
             image.url = await getPresignedUrl(image.key)
           } catch (error) {
-            console.error('Error getting presigned URL for', image.key, error)
             // Use a placeholder or skip this image
             image.url = '/api/placeholder/400/400'
           }
@@ -202,20 +217,19 @@ export async function listImagesFromS3(filters?: FilterOptions): Promise<S3Image
 
     return sortedImages
   } catch (error) {
-    console.error('Error listing images from S3:', error)
     // Return empty array instead of throwing to prevent app crash
     return []
   }
 }
 
-export async function getFolders(): Promise<string[]> {
+export async function getFolders(userId: string): Promise<string[]> {
   try {
     const bucketName = process.env.AWS_S3_BUCKET_NAME!
-    const baseFolder = process.env.AWS_S3_FOLDER_PATH || 'Pictures/'
+    const userFolder = getUserFolderPath(userId)
     
     const command = new ListObjectsV2Command({
       Bucket: bucketName,
-      Prefix: baseFolder,
+      Prefix: userFolder,
       Delimiter: '/',
     })
 
@@ -226,11 +240,106 @@ export async function getFolders(): Promise<string[]> {
     }
 
     return response.CommonPrefixes
-      .map(prefix => prefix.Prefix?.replace(baseFolder, '').replace('/', '') || '')
+      .map(prefix => prefix.Prefix?.replace(userFolder, '').replace('/', '') || '')
       .filter(folder => folder.length > 0)
   } catch (error) {
     console.error('Error getting folders:', error)
     return []
+  }
+}
+
+// New function to upload image to user-specific folder
+export async function uploadImageToS3(
+  userId: string, 
+  file: Buffer, 
+  filename: string, 
+  contentType: string,
+  folder?: string
+): Promise<{ success: boolean; key?: string; error?: string }> {
+  try {
+    const bucketName = process.env.AWS_S3_BUCKET_NAME!
+    const userFolder = getUserFolderPath(userId)
+    
+    // Create key with optional folder
+    const key = folder 
+      ? `${userFolder}${folder}/${filename}`
+      : `${userFolder}${filename}`
+    
+    const command = new PutObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+      Body: file,
+      ContentType: contentType,
+      Metadata: {
+        userId,
+        uploadedAt: new Date().toISOString(),
+        folder: folder || 'root'
+      }
+    })
+
+    await s3Client.send(command)
+    
+    return { success: true, key }
+  } catch (error) {
+    let errorMessage = 'Failed to upload image'
+    if (error instanceof Error) {
+      if (error.message.includes('AccessDenied')) {
+        errorMessage = 'Access denied to S3 bucket. Check AWS credentials and permissions.'
+      } else if (error.message.includes('NoSuchBucket')) {
+        errorMessage = 'S3 bucket does not exist. Check bucket name configuration.'
+      } else if (error.message.includes('InvalidAccessKeyId')) {
+        errorMessage = 'Invalid AWS access key. Check AWS credentials.'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    return { success: false, error: errorMessage }
+  }
+}
+
+// New function to delete image from S3
+export async function deleteImageFromS3(
+  userId: string,
+  imageKey: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const bucketName = process.env.AWS_S3_BUCKET_NAME!
+    
+    // Verify the image belongs to the user
+    const userFolder = getUserFolderPath(userId)
+    if (!imageKey.startsWith(userFolder)) {
+      return { success: false, error: 'Image does not belong to user' }
+    }
+    
+    const command = new DeleteObjectCommand({
+      Bucket: bucketName,
+      Key: imageKey,
+    })
+
+    await s3Client.send(command)
+    
+    // Clear cache for this image
+    urlCache.delete(imageKey)
+    
+    return { success: true }
+  } catch (error) {
+    let errorMessage = 'Failed to delete image'
+    if (error instanceof Error) {
+      if (error.message.includes('AccessDenied')) {
+        errorMessage = 'Access denied to S3 bucket. Check AWS credentials and permissions.'
+      } else if (error.message.includes('NoSuchBucket')) {
+        errorMessage = 'S3 bucket does not exist. Check bucket name configuration.'
+      } else if (error.message.includes('NoSuchKey')) {
+        errorMessage = 'Image not found in S3 bucket.'
+      } else if (error.message.includes('InvalidAccessKeyId')) {
+        errorMessage = 'Invalid AWS access key. Check AWS credentials.'
+      } else {
+        errorMessage = error.message
+      }
+    }
+    
+    return { success: false, error: errorMessage }
   }
 }
 

@@ -2,12 +2,13 @@
 
 import { useState, useCallback, memo } from 'react'
 import { motion } from 'framer-motion'
-import { Heart, Calendar, Download, Eye, ZoomIn } from 'lucide-react'
+import { Heart, Calendar, Download, Trash2 } from 'lucide-react'
 import { S3Image } from '@/lib/s3'
 
 interface MemoryCardProps {
   image: S3Image
   onLike?: (key: string) => void
+  onDelete?: (key: string) => void
   isLiked?: boolean
   viewMode?: 'grid' | 'list'
   showDetails?: boolean
@@ -16,6 +17,7 @@ interface MemoryCardProps {
 const MemoryCard = memo(function MemoryCard({ 
   image, 
   onLike, 
+  onDelete,
   isLiked = false, 
   viewMode = 'grid',
   showDetails = true
@@ -23,25 +25,20 @@ const MemoryCard = memo(function MemoryCard({
   const [isLoading, setIsLoading] = useState(true)
   const [isHovered, setIsHovered] = useState(false)
   const [imageError, setImageError] = useState(false)
-  const [isZoomed, setIsZoomed] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
 
   const formatDate = useCallback((date: Date | string) => {
     try {
-      // Ensure we have a valid Date object
       const dateObj = typeof date === 'string' ? new Date(date) : date
-      
-      // Check if the date is valid
       if (isNaN(dateObj.getTime())) {
         return 'Ngày không xác định'
       }
-
       return new Intl.DateTimeFormat('vi-VN', {
         year: 'numeric',
         month: 'long',
         day: 'numeric',
       }).format(dateObj)
     } catch (error) {
-      console.error('Error formatting date:', error)
       return 'Ngày không xác định'
     }
   }, [])
@@ -64,19 +61,28 @@ const MemoryCard = memo(function MemoryCard({
     document.body.removeChild(link)
   }, [image.url, image.key])
 
-  const handleView = useCallback(() => {
-    setIsZoomed(!isZoomed)
-  }, [isZoomed])
-
-  const handleZoom = useCallback((e: React.MouseEvent) => {
-    e.stopPropagation()
-    setIsZoomed(!isZoomed)
-  }, [isZoomed])
-
   const handleLike = useCallback((e: React.MouseEvent) => {
     e.stopPropagation()
     onLike?.(image.key)
   }, [onLike, image.key])
+
+  const handleDelete = useCallback(async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    
+    if (!onDelete) return
+    
+    const confirmed = window.confirm('Bạn có chắc chắn muốn xóa ảnh này?')
+    if (!confirmed) return
+    
+    setIsDeleting(true)
+    try {
+      onDelete(image.key)
+    } catch (error) {
+      console.error('Error deleting image:', error)
+    } finally {
+      setIsDeleting(false)
+    }
+  }, [onDelete, image.key])
 
   const handleImageLoad = useCallback(() => {
     setIsLoading(false)
@@ -90,19 +96,16 @@ const MemoryCard = memo(function MemoryCard({
   if (viewMode === 'list') {
     return (
       <motion.div
-        className={`memory-card group cursor-pointer ${isZoomed ? 'zoomed' : ''}`}
+        className={`memory-card group cursor-pointer`}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
-        onClick={handleView}
         title="Click để xem chi tiết"
       >
         <div className={`flex items-center space-x-4 p-4 bg-white/80 backdrop-blur-sm rounded-2xl shadow-soft border border-white/20 transition-all duration-300 ${
-          isZoomed 
-            ? 'shadow-2xl' 
-            : 'hover:shadow-glow hover:-translate-y-1'
+          isHovered ? 'hover:shadow-glow hover:-translate-y-1' : ''
         }`}>
           <div className="relative w-20 h-20 overflow-hidden rounded-xl bg-neutral-100 flex-shrink-0">
             {isLoading && (
@@ -123,7 +126,7 @@ const MemoryCard = memo(function MemoryCard({
                 alt={`Memory ${image.key}`}
                 className={`h-full w-full object-cover transition-all duration-300 ${
                   isLoading ? 'opacity-0' : 'opacity-100'
-                } ${isZoomed ? '' : ''}`}
+                }`}
                 onLoad={handleImageLoad}
                 onError={handleImageError}
                 loading="lazy"
@@ -157,6 +160,17 @@ const MemoryCard = memo(function MemoryCard({
                   <Download className="h-4 w-4" />
                 </button>
                 
+                {onDelete && (
+                  <button
+                    onClick={handleDelete}
+                    disabled={isDeleting}
+                    className="p-2 text-red-600 hover:text-red-700 hover:bg-red-50 rounded-xl transition-all duration-300 disabled:opacity-50"
+                    title="Xóa ảnh"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                )}
+                
                 {onLike && (
                   <button
                     onClick={handleLike}
@@ -180,19 +194,16 @@ const MemoryCard = memo(function MemoryCard({
 
   return (
     <motion.div
-      className={`memory-card group cursor-pointer ${isZoomed ? 'zoomed' : ''}`}
+      className={`memory-card group cursor-pointer`}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3 }}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
-      onClick={handleView}
       title="Click để xem chi tiết"
     >
       <div className={`relative aspect-square overflow-hidden rounded-2xl bg-neutral-100 shadow-soft border border-white/20 transition-all duration-300 ${
-        isZoomed 
-          ? 'shadow-2xl' 
-          : 'hover:shadow-glow hover:-translate-y-1'
+        isHovered ? 'hover:shadow-glow hover:-translate-y-1' : ''
       }`}>
         {isLoading && (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -215,7 +226,7 @@ const MemoryCard = memo(function MemoryCard({
             alt={`Memory ${image.key}`}
             className={`h-full w-full object-cover transition-all duration-300 ${
               isLoading ? 'opacity-0' : 'opacity-100'
-            } ${isZoomed ? '' : 'group-hover:scale-110'}`}
+            } ${isHovered ? 'group-hover:scale-110' : ''}`}
             onLoad={handleImageLoad}
             onError={handleImageError}
             loading="lazy"
@@ -223,7 +234,7 @@ const MemoryCard = memo(function MemoryCard({
         )}
 
         {showDetails && (
-          <div className={`memory-overlay ${isZoomed ? 'opacity-100' : ''}`}>
+          <div className="memory-overlay">
             <div className="absolute bottom-0 left-0 right-0 p-4 text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center space-x-2 text-sm">
@@ -233,20 +244,23 @@ const MemoryCard = memo(function MemoryCard({
                 
                 <div className="flex items-center space-x-2">
                   <button
-                    onClick={handleZoom}
-                    className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"
-                    title="Xem chi tiết"
-                  >
-                    <Eye className="h-4 w-4" />
-                  </button>
-                  
-                  <button
                     onClick={handleDownload}
                     className="rounded-full bg-white/20 p-2 backdrop-blur-sm transition-all hover:bg-white/30 hover:scale-110"
                     title="Tải xuống"
                   >
                     <Download className="h-4 w-4" />
                   </button>
+                  
+                  {onDelete && (
+                    <button
+                      onClick={handleDelete}
+                      disabled={isDeleting}
+                      className="rounded-full bg-red-500/20 p-2 backdrop-blur-sm transition-all hover:bg-red-500/30 hover:scale-110 disabled:opacity-50"
+                      title="Xóa ảnh"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                   
                   {onLike && (
                     <button

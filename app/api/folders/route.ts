@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { listImagesFromS3 } from '@/lib/s3'
+import { getFolders } from '@/lib/s3'
 import { authenticateUser } from '@/lib/auth'
 
-async function handleImagesRequest(request: NextRequest) {
+async function handleFoldersRequest(request: NextRequest) {
   try {
     // Read request body first
     const body = await request.json()
@@ -25,8 +25,8 @@ async function handleImagesRequest(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const images = await listImagesFromS3(userId)
-    return NextResponse.json(images)
+    const folders = await getFolders(userId)
+    return NextResponse.json(folders)
 
   } catch (error) {
     return NextResponse.json(
@@ -37,9 +37,9 @@ async function handleImagesRequest(request: NextRequest) {
 }
 
 export async function GET(request: NextRequest) {
-  return handleImagesRequest(request)
+  return handleFoldersRequest(request)
 }
 
 export async function POST(request: NextRequest) {
-  return handleImagesRequest(request)
+  return handleFoldersRequest(request)
 } 

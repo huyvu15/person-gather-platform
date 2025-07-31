@@ -7,6 +7,7 @@ import MemoryGrid from '@/components/MemoryGrid'
 import UploadModal from '@/components/UploadModal'
 import ModernCarousel from '@/components/ModernCarousel'
 import { S3Image } from '@/lib/s3'
+import { useAuth } from '@/contexts/AuthContext'
 
 interface Filters {
   dateRange?: string
@@ -31,6 +32,7 @@ function LoadingSpinner() {
 }
 
 export default function MemoriesPage() {
+  const { user } = useAuth()
   const [images, setImages] = useState<S3Image[]>([])
   const [searchQuery, setSearchQuery] = useState('')
   const [filters, setFilters] = useState<Filters>({})
@@ -42,12 +44,39 @@ export default function MemoriesPage() {
   const [folders, setFolders] = useState<string[]>([])
   const [isSlideshowOpen, setIsSlideshowOpen] = useState(false)
 
-  // Load images from API when component mounts
+  // Load images from API when component mounts or user changes
   useEffect(() => {
     const loadImages = async () => {
+      if (!user?.id) {
+        setImages([])
+        setIsLoading(false)
+        return
+      }
+
       try {
         setIsLoading(true)
-        const response = await fetch('/api/images')
+        
+        // Build query parameters for filters
+        const params = new URLSearchParams()
+        
+        if (filters.folder && filters.folder !== 'all') {
+          params.append('folder', filters.folder)
+        }
+        if (filters.dateRange && filters.dateRange !== 'all') {
+          params.append('dateRange', filters.dateRange)
+        }
+        if (searchQuery) {
+          params.append('search', searchQuery)
+        }
+
+        const response = await fetch(`/api/images?${params.toString()}`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user.id })
+        })
+        
         if (response.ok) {
           const imagesFromAPI = await response.json()
           setImages(imagesFromAPI)
@@ -68,7 +97,40 @@ export default function MemoriesPage() {
     }
 
     loadImages()
-  }, [])
+  }, [user?.id, filters.folder, filters.dateRange, searchQuery])
+
+  // Load folders when user changes
+  useEffect(() => {
+    const loadFolders = async () => {
+      if (!user?.id) {
+        setFolders([])
+        return
+      }
+
+      try {
+        const response = await fetch('/api/folders', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({ userId: user.id })
+        })
+        
+        if (response.ok) {
+          const foldersFromAPI = await response.json()
+          setFolders(foldersFromAPI)
+        } else {
+          console.error('Failed to load folders')
+          setFolders([])
+        }
+      } catch (error) {
+        console.error('Error loading folders:', error)
+        setFolders([])
+      }
+    }
+
+    loadFolders()
+  }, [user?.id])
 
   // Close filter dropdown when clicking outside
   useEffect(() => {
@@ -86,20 +148,15 @@ export default function MemoriesPage() {
   const filteredImages = useMemo(() => {
     let filtered = images
 
-    // Search filter
+    // Search filter (client-side for better UX)
     if (searchQuery) {
       filtered = filtered.filter(image => 
         image.key.toLowerCase().includes(searchQuery.toLowerCase())
       )
     }
 
-    // Folder filter
-    if (filters.folder && filters.folder !== 'all') {
-      filtered = filtered.filter(image => image.folder === filters.folder)
-    }
-
-    // Date range filter
-    if (filters.dateRange) {
+    // Date range filter (client-side)
+    if (filters.dateRange && filters.dateRange !== 'all') {
       const now = new Date()
       filtered = filtered.filter(image => {
         const imageDate = image.lastModified
@@ -132,6 +189,10 @@ export default function MemoriesPage() {
     setIsUploadModalOpen(false)
   }
 
+  const handleDeleteImage = (deletedImageKey: string) => {
+    setImages(prev => prev.filter(img => img.key !== deletedImageKey))
+  }
+
   const handleFilterChange = (type: 'folder' | 'dateRange', value: string) => {
     setFilters(prev => ({
       ...prev,
@@ -149,6 +210,32 @@ export default function MemoriesPage() {
 
   const handleCloseSlideshow = () => {
     setIsSlideshowOpen(false)
+  }
+
+  // Show login prompt if user is not authenticated
+  if (!user) {
+    return (
+      <div className="min-h-full bg-gradient-to-br from-purple-50 via-pink-50 to-blue-50 flex items-center justify-center">
+        <div className="text-center">
+          <motion.div 
+            className="mx-auto mb-6 h-20 w-20 rounded-full bg-gradient-to-r from-purple-400 to-pink-400 flex items-center justify-center"
+            animate={{ 
+              scale: [1, 1.1, 1],
+              rotate: [0, 5, -5, 0]
+            }}
+            transition={{ 
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <Camera className="h-10 w-10 text-white" />
+          </motion.div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Vui lòng đăng nhập</h3>
+          <p className="text-gray-600">Đăng nhập để xem ảnh kỷ niệm của bạn</p>
+        </div>
+      </div>
+    )
   }
 
   return (
@@ -358,7 +445,7 @@ export default function MemoriesPage() {
             )}
 
             {/* Upload */}
-            {/* <motion.button 
+            <motion.button 
               onClick={() => setIsUploadModalOpen(true)}
               className="flex items-center px-4 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all duration-300 font-semibold text-xs"
               whileHover={{ scale: 1.04, y: -1 }}
@@ -366,8 +453,7 @@ export default function MemoriesPage() {
             >
               <Upload className="h-4 w-4 mr-1" />
               <span>Tải lên</span>
-            </motion.button> */}
-            {/* Nếu có nút tạo thư mục, cũng xóa hoặc comment tương tự */}
+            </motion.button>
           </div>
         </motion.div>
 
@@ -385,6 +471,8 @@ export default function MemoriesPage() {
               images={filteredImages} 
               viewMode={viewMode}
               showDetails={showDetails}
+              onDelete={handleDeleteImage}
+              userId={user.id}
             />
           ) : (
             <motion.div 
@@ -430,6 +518,7 @@ export default function MemoriesPage() {
             <UploadModal
               isOpen={isUploadModalOpen}
               onClose={() => setIsUploadModalOpen(false)}
+              userId={user.id}
             />
           )}
         </AnimatePresence>

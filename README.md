@@ -4,13 +4,15 @@
 
 ## 🚀 Tính năng
 
-- **Quản lý ảnh**: Upload, xem, tải xuống ảnh từ AWS S3
-- **Tìm kiếm & Lọc**: Tìm kiếm nhanh và bộ lọc thông minh
+- **Quản lý ảnh theo user**: Mỗi user có folder riêng trên S3 để lưu trữ ảnh
+- **Upload ảnh**: Upload ảnh vào folder riêng của user với authentication
+- **Tìm kiếm & Lọc**: Tìm kiếm nhanh và bộ lọc thông minh theo user
 - **Chế độ xem**: Grid và List view với tùy chỉnh
 - **Zoom ảnh**: Xem chi tiết ảnh với zoom 1.5x
 - **Slideshow băng chuyền**: Xem ảnh tự động với hiệu ứng trượt ngang
 - **Giao diện đẹp**: Thiết kế hiện đại với glass morphism và gradient
 - **Responsive**: Hoạt động tốt trên mọi thiết bị
+- **User Authentication**: Hệ thống đăng nhập/đăng ký với database
 
 ## 🛠️ Cài đặt
 
@@ -26,30 +28,29 @@ npm install
 npm install @prisma/client prisma pg
 npx prisma generate
 npm install bcryptjs @types/bcryptjs
-px prisma db push --force-reset
+npx prisma db push --force-reset
 npm list bcryptjs
 npm install recharts
 ```
-
 
 ### 3. Cấu hình Environment Variables
 
 Tạo file `.env.local` trong thư mục gốc:
 
-```bash
+```env
 # AWS S3 Configuration
 AWS_ACCESS_KEY_ID=your_access_key_id_here
 AWS_SECRET_ACCESS_KEY=your_secret_access_key_here
-AWS_REGION=us-east-1
+AWS_REGION=ap-southeast-1
 AWS_S3_BUCKET_NAME=your-bucket-name
-AWS_S3_FOLDER_PATH=Pictures/Me
+AWS_S3_FOLDER_PATH=Pictures/
+
+# Database Configuration (PostgreSQL)
+DATABASE_URL="postgresql://username:password@localhost:5432/mygather"
 
 # Next.js Configuration
 NEXTAUTH_SECRET=your_nextauth_secret_here
 NEXTAUTH_URL=http://localhost:3000
-
-# Database (nếu sử dụng)
-DATABASE_URL=your_database_url_here
 ```
 
 ### 4. Chạy development server
@@ -59,15 +60,29 @@ npm run dev
 
 Truy cập [http://localhost:3000](http://localhost:3000) để xem ứng dụng.
 
-## 🔐 Bảo mật
+## 📁 Cấu trúc S3 cho User-Specific Folders
 
-### Environment Variables
-- **KHÔNG BAO GIỜ** commit file `.env.local` lên Git
-- File `.gitignore` đã được cấu hình để bảo vệ các file nhạy cảm
-- Chỉ sử dụng `.env.example` làm template
+Ứng dụng sẽ tạo cấu trúc folder như sau trên S3:
+
+```
+Pictures/
+├── users/
+│   ├── user1_id/
+│   │   ├── memories/
+│   │   │   ├── image1.jpg
+│   │   │   └── image2.png
+│   │   ├── family/
+│   │   │   └── family_photo.jpg
+│   │   └── travel/
+│   │       └── vacation.jpg
+│   ├── user2_id/
+│   │   ├── memories/
+│   │   └── work/
+│   └── ...
+```
 
 ### AWS S3 Setup
-1. Tạo AWS S3 bucket
+1. Tạo AWS S3 bucket ở region `ap-southeast-1`
 2. Cấu hình CORS cho bucket
 3. Tạo IAM user với quyền truy cập S3
 4. Lưu Access Key và Secret Key an toàn
@@ -84,40 +99,81 @@ Truy cập [http://localhost:3000](http://localhost:3000) để xem ứng dụng
 ]
 ```
 
+### IAM Policy cho S3
+```json
+{
+    "Version": "2012-10-17",
+    "Statement": [
+        {
+            "Effect": "Allow",
+            "Action": [
+                "s3:GetObject",
+                "s3:PutObject",
+                "s3:DeleteObject",
+                "s3:ListBucket"
+            ],
+            "Resource": [
+                "arn:aws:s3:::your-bucket-name",
+                "arn:aws:s3:::your-bucket-name/*"
+            ]
+        }
+    ]
+}
+```
+
 ## 📁 Cấu trúc dự án
 
 ```
 mygather/
 ├── app/                    # Next.js App Router
 │   ├── api/               # API routes
-│   ├── memories/          # Trang memories
-│   └── page.tsx           # Trang chủ
+│   │   ├── auth/          # Authentication routes
+│   │   ├── images/        # Image listing API
+│   │   ├── folders/       # Folder listing API
+│   │   └── upload/        # File upload API
+│   ├── (dashboard)/       # Dashboard pages
+│   └── login/             # Login page
 ├── components/            # React components
 │   ├── MemoryCard.tsx    # Card hiển thị ảnh
 │   ├── MemoryGrid.tsx    # Grid layout
-│   ├── SearchAndFilter.tsx # Tìm kiếm và lọc
-│   ├── ConveyorBelt.tsx  # Slideshow băng chuyền
-│   └── CarouselModal.tsx # Modal carousel xem ảnh
+│   ├── UploadModal.tsx   # Upload modal
+│   └── ModernCarousel.tsx # Slideshow component
+├── contexts/             # React contexts
+│   └── AuthContext.tsx   # Authentication context
 ├── lib/                  # Utilities
-│   └── s3.ts            # AWS S3 integration
+│   ├── s3.ts            # AWS S3 integration
+│   ├── auth.ts          # Authentication helpers
+│   └── prisma.ts        # Database client
+├── prisma/              # Database schema
+│   └── schema.prisma    # Prisma schema
 ├── .env.example         # Template cho env variables
 ├── .gitignore          # Git ignore rules
 └── README.md           # Documentation
 ```
 
-## 🎨 Giao diện
+## 🔐 User Authentication
 
-### Màu sắc
-- **Primary**: Xanh dương tươi (#0ea5e9)
-- **Accent**: Tím hồng gradient (#d946ef)
-- **Success**: Xanh lá tươi (#22c55e)
-- **Warning**: Cam vàng (#f59e0b)
+Ứng dụng sử dụng hệ thống authentication với:
 
-### Hiệu ứng
-- Glass morphism với backdrop blur
-- Gradient backgrounds
-- Smooth animations và transitions
-- Hover effects với scale và glow
+- **Database**: PostgreSQL với Prisma ORM
+- **User Model**: ID, email, password (hashed), name, role, isActive
+- **Context**: React Context để quản lý user state
+- **API Routes**: Protected routes với user authentication
+
+### Database Schema
+```prisma
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  password  String
+  name      String
+  avatar    String?
+  role      String   @default("user")
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+```
 
 ## 🚀 Deployment
 
@@ -148,10 +204,11 @@ npm run lint         # Lint code
 AWS_ACCESS_KEY_ID=your_key
 AWS_SECRET_ACCESS_KEY=your_secret
 AWS_S3_BUCKET_NAME=your_bucket
-AWS_S3_FOLDER_PATH=Pictures/Me
+AWS_S3_FOLDER_PATH=Pictures/
+DATABASE_URL=your_database_url
 
 # Optional
-AWS_REGION=us-east-1
+AWS_REGION=ap-southeast-1
 NEXTAUTH_SECRET=your_secret
 NEXTAUTH_URL=http://localhost:3000
 ```
@@ -171,6 +228,14 @@ NEXTAUTH_URL=http://localhost:3000
 3. **Images không hiển thị**
    - Kiểm tra S3 bucket configuration
    - Đảm bảo CORS được cấu hình đúng
+
+4. **Authentication errors**
+   - Kiểm tra database connection
+   - Đảm bảo user đã đăng ký và active
+
+5. **Upload fails**
+   - Kiểm tra S3 permissions
+   - Đảm bảo folder path được tạo đúng
 
 ## 📝 License
 

@@ -271,7 +271,7 @@ export default function Sidebar() {
           <div className="relative">
             <motion.button
               onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-              className="w-64 mx-auto flex items-center justify-between p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 hover:shadow-md transition-all duration-300"
+              className="w-64  mx-auto flex items-center justify-between p-2 bg-gradient-to-r from-purple-50 to-pink-50 rounded-2xl border border-purple-200 hover:shadow-md transition-all duration-300"
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
             >

@@ -7,13 +7,16 @@ interface UploadModalProps {
   isOpen: boolean
   onClose: () => void
   onUpload?: (files: File[]) => void
+  userId: string
 }
 
-export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
+export default function UploadModal({ isOpen, onClose, onUpload, userId }: UploadModalProps) {
   const [files, setFiles] = useState<File[]>([])
   const [uploading, setUploading] = useState(false)
   const [selectedFolder, setSelectedFolder] = useState('memories')
   const [tags, setTags] = useState('')
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [uploadError, setUploadError] = useState<string | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   const folders = ['memories', 'family', 'travel', 'work', 'personal']
@@ -21,6 +24,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
   const handleFileSelect = (event: React.ChangeEvent<HTMLInputElement>) => {
     const selectedFiles = Array.from(event.target.files || [])
     setFiles(prev => [...prev, ...selectedFiles])
+    setUploadError(null)
   }
 
   const removeFile = (index: number) => {
@@ -31,16 +35,46 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
     if (files.length === 0) return
 
     setUploading(true)
+    setUploadProgress(0)
+    setUploadError(null)
+
     try {
-      // Simulate upload
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      onUpload?.(files)
-      setFiles([])
-      onClose()
+      const formData = new FormData()
+      formData.append('userId', userId)
+      formData.append('folder', selectedFolder)
+      
+      files.forEach((file) => {
+        formData.append('files', file)
+      })
+
+      console.log('📤 Starting upload for user:', userId)
+      console.log('📁 Selected folder:', selectedFolder)
+      console.log('📄 Number of files:', files.length)
+
+      const response = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+
+      const result = await response.json()
+      console.log('📥 Upload response:', result)
+
+      if (response.ok && result.success) {
+        setUploadProgress(100)
+        onUpload?.(files)
+        setFiles([])
+        onClose()
+      } else {
+        const errorMessage = result.error || result.details || 'Upload failed'
+        console.error('❌ Upload failed:', errorMessage)
+        setUploadError(errorMessage)
+      }
     } catch (error) {
-      console.error('Upload failed:', error)
+      console.error('❌ Network error:', error)
+      setUploadError(`Network error: ${error instanceof Error ? error.message : 'Unknown error'}`)
     } finally {
       setUploading(false)
+      setUploadProgress(0)
     }
   }
 
@@ -92,6 +126,29 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
             />
           </div>
 
+          {/* Upload Progress */}
+          {uploading && (
+            <div className="space-y-2">
+              <div className="flex justify-between text-sm">
+                <span>Đang tải lên...</span>
+                <span>{uploadProgress}%</span>
+              </div>
+              <div className="w-full bg-gray-200 rounded-full h-2">
+                <div 
+                  className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                  style={{ width: `${uploadProgress}%` }}
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Upload Error */}
+          {uploadError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <p className="text-red-800 text-sm">{uploadError}</p>
+            </div>
+          )}
+
           {/* Selected Files */}
           {files.length > 0 && (
             <div>
@@ -111,6 +168,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
                     <button
                       onClick={() => removeFile(index)}
                       className="p-1 hover:bg-gray-200 rounded"
+                      disabled={uploading}
                     >
                       <X className="h-4 w-4 text-gray-500" />
                     </button>
@@ -132,6 +190,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
                 value={selectedFolder}
                 onChange={(e) => setSelectedFolder(e.target.value)}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                disabled={uploading}
               >
                 {folders.map((folder) => (
                   <option key={folder} value={folder}>
@@ -153,6 +212,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
                 onChange={(e) => setTags(e.target.value)}
                 placeholder="family, travel, vacation"
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-transparent"
+                disabled={uploading}
               />
             </div>
           </div>
@@ -163,6 +223,7 @@ export default function UploadModal({ isOpen, onClose, onUpload }: UploadModalPr
           <button
             onClick={onClose}
             className="px-4 py-2 text-gray-700 border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+            disabled={uploading}
           >
             Hủy
           </button>

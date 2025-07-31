@@ -9,9 +9,17 @@ interface MemoryGridProps {
   images: S3Image[]
   viewMode?: 'grid' | 'list'
   showDetails?: boolean
+  onDelete?: (imageKey: string) => void
+  userId?: string
 }
 
-export default function MemoryGrid({ images, viewMode = 'grid', showDetails = true }: MemoryGridProps) {
+export default function MemoryGrid({ 
+  images, 
+  viewMode = 'grid', 
+  showDetails = true,
+  onDelete,
+  userId
+}: MemoryGridProps) {
   const [likedImages, setLikedImages] = useState<Set<string>>(new Set())
 
   const handleLike = useCallback((imageKey: string) => {
@@ -25,6 +33,32 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
       return newSet
     })
   }, [])
+
+  const handleDelete = useCallback(async (imageKey: string) => {
+    if (!onDelete || !userId) return
+    
+    try {
+      const response = await fetch('/api/images/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          imageKey,
+          userId
+        })
+      })
+
+      if (response.ok) {
+        onDelete(imageKey)
+      } else {
+        const error = await response.json()
+        alert('Lỗi khi xóa ảnh: ' + (error.error || 'Unknown error'))
+      }
+    } catch (error) {
+      alert('Lỗi khi xóa ảnh')
+    }
+  }, [onDelete, userId])
 
   // Memoize empty state
   const emptyState = useMemo(() => (
@@ -72,6 +106,7 @@ export default function MemoryGrid({ images, viewMode = 'grid', showDetails = tr
               <MemoryCard
                 image={image}
                 onLike={handleLike}
+                onDelete={handleDelete}
                 isLiked={likedImages.has(image.key)}
                 viewMode={viewMode}
                 showDetails={showDetails}
